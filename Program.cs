@@ -27,7 +27,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers().AddNewtonsoftJson().AddXmlDataContractSerializerFormatters();
 
 
-// Configure Swagger (Fixing AddOpenApi) n  
+// Configure Swagger (Fixing AddOpenApi) 
+
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo

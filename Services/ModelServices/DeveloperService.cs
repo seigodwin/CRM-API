@@ -167,7 +167,7 @@ namespace CRMApi.Services.Services
                     ImageUrl = dev.ImageUrl,
                     Stack = dev.Stack,
 
-                    Teams = dev.Teams.Select(t => new FullTeamDTO
+                    Teams = dev.Teams is null ? null : dev.Teams.Select(t => new FullTeamDTO
                     {
                         Id = t.Id,
                         Title = t.Title,
@@ -210,7 +210,7 @@ namespace CRMApi.Services.Services
                 ImageUrl = developer.ImageUrl,
                 Stack = developer.Stack,
 
-                Teams = developer.Teams.Select(t => new FullTeamDTO
+                Teams = developer.Teams is null ? null : developer.Teams.Select(t => new FullTeamDTO
                 {
                     Id = t.Id,
                     Title = t.Title,

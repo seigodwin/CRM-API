@@ -39,7 +39,7 @@ namespace CRMApi.Services.ModelServices
                 return response;
             }
 
-            if (team.Developers.Count is not 0)
+            if (team.Developers is not null && team.Developers.Count is not 0)
             {
                 if (team.Developers.Any(d => d.Id == DeveloperId))
                 {
@@ -90,7 +90,7 @@ namespace CRMApi.Services.ModelServices
                 return response;
             }
 
-            if (team.Projects.Count is not 0)
+            if (team.Projects is not null && team.Projects.Count is not 0)
             {
                 if (team.Projects.Any(p => p.Id == ProjectId))
                 {
@@ -169,7 +169,7 @@ namespace CRMApi.Services.ModelServices
                     Description = team.Description,
                     TeamLeadId = team.TeamLeadId,
 
-                    Projects = team.Projects.Select(p => new FullProjectDTO
+                    Projects = team.Projects is null ? null : team.Projects.Select(p => new FullProjectDTO
                     {
                         Id = p.Id,
                         Title = p.Title,
@@ -178,7 +178,7 @@ namespace CRMApi.Services.ModelServices
 
                     }).ToList(),
 
-                    Developers = team.Developers.Select(d => new FullDeveloperDTO
+                    Developers = team.Developers is null ? null : team.Developers.Select(d => new FullDeveloperDTO
                     {
                         Id = d.Id,
                         Name = d.Name,
@@ -220,27 +220,38 @@ namespace CRMApi.Services.ModelServices
             }
 
 
-            if (team.Developers.Any(d => d.Id == DeveloperId))
+            if (team.Developers is not null)
             {
                 var developer = team.Developers.FirstOrDefault(d => d.Id == DeveloperId);
 
-                team.Developers.Remove(developer);
-                try
+                if (developer is not null)
                 {
-                    await _context.SaveChangesAsync();
-                    response.Message = "Developer deleted successfully";
+
+                    team.Developers.Remove(developer);
+                    try
+                    {
+                        await _context.SaveChangesAsync();
+                        response.Message = "Developer deleted successfully";
+                    }
+
+                    catch (DbUpdateException dbEx)
+                    {
+                        response.Message = $"A database error occured: {dbEx.Message}";
+                        response.Success = false;
+                    }
+                }
+                
+                else
+                {
+                    response.Message = $"Developer with Id {DeveloperId} is not a member of this Team";
+                    response.Success = false;
                 }
 
-                catch(DbUpdateException dbEx)
-                {
-                    response.Message = $"A database error occured: {dbEx.Message}";
-                    response.Success= false;
-                }
             }
 
             else
             {
-                response.Message = $"Developer with Id {DeveloperId} is not a member of this Team";
+                response.Message = $"No developer has been assigned to this Team";
                 response.Success = false;
             }
 
@@ -264,27 +275,37 @@ namespace CRMApi.Services.ModelServices
             }
 
 
-            if (team.Projects.Any(d => d.Id == ProjectId))
+            if (team.Projects is not null)
             {
                 var project = team.Projects.FirstOrDefault(d => d.Id == ProjectId);
 
-                team.Projects.Remove(project);
-                try
+                if (project is not null)
                 {
-                    await _context.SaveChangesAsync();
-                    response.Message = "Project deleted successfully";
+                    team.Projects.Remove(project);
+                    try
+                    {
+                        await _context.SaveChangesAsync();
+                        response.Message = "Project deleted successfully";
+                    }
+
+                    catch (DbUpdateException dbEx)
+                    {
+                        response.Message = $"A database error occured: {dbEx.Message}";
+                        response.Success = false;
+                    }
                 }
 
-                catch (DbUpdateException dbEx)
+                else
                 {
-                    response.Message = $"A database error occured: {dbEx.Message}";
+                    response.Message = $"Project with Id {ProjectId} is not assigned to this Team";
                     response.Success = false;
-                }
+                } 
+                
             }
 
             else
             {
-                response.Message = $"Project with Id {ProjectId} is not assigned to this Team";
+                response.Message = $"No Project has been assigned to this Team";
                 response.Success = false;
             } 
 
@@ -353,7 +374,7 @@ namespace CRMApi.Services.ModelServices
                     Description = team.Description,
                     ImageUrl = team.ImageUrl,
 
-                    Developers = team.Developers.Select(d => new FullDeveloperDTO
+                    Developers = team.Developers is null ? null : team.Developers.Select(d => new FullDeveloperDTO
                     {
                         Id = d.Id,
                         Name = d.Name,
@@ -362,7 +383,7 @@ namespace CRMApi.Services.ModelServices
                         Email = d.Email,
                     }).ToList(),
                     
-                    Projects = team.Projects.Select(p => new FullProjectDTO 
+                    Projects = team.Projects is null ? null : team.Projects.Select(p => new FullProjectDTO 
                     {
                         Id = p.Id,
                         Title = p.Title,
@@ -371,7 +392,7 @@ namespace CRMApi.Services.ModelServices
 
                     }).ToList(),
 
-                    TeamLead = new FullDeveloperDTO
+                    TeamLead = team.TeamLead is null ? null : new FullDeveloperDTO
                     {
                         Id = team.TeamLead.Id,
                         Name = team.TeamLead.Name,
@@ -414,7 +435,7 @@ namespace CRMApi.Services.ModelServices
                 ImageUrl = team.ImageUrl,
                 Description = team.Description,
 
-                Projects = team.Projects.Select(p => new FullProjectDTO
+                Projects = team.Projects is null ? null : team.Projects.Select(p => new FullProjectDTO
                 {
                     Id = p.Id,
                     Title = p.Title,
@@ -422,7 +443,7 @@ namespace CRMApi.Services.ModelServices
                     ClientName = p.ClientName
                 }).ToList(),
 
-                Developers = team.Developers.Select(d => new FullDeveloperDTO  
+                Developers = team.Developers is null ? null : team.Developers.Select(d => new FullDeveloperDTO  
                 {
                     Id = d.Id,
                     Name = d.Name,
@@ -430,7 +451,7 @@ namespace CRMApi.Services.ModelServices
                     Email = d.Email
                 }).ToList(),
                    
-                TeamLead = new FullDeveloperDTO
+                TeamLead = team.TeamLead is null ? null : new FullDeveloperDTO
                 {
                     Id = team.TeamLead.Id,
                     Name = team.TeamLead.Name,

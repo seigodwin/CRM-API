@@ -21,7 +21,7 @@ namespace CRMApi.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllProjects(int page = 1, int pageSize = 10)
         {
-            var response = await _projectService.GetAllProjects(page , pageSize);
+            var response = await _projectService.GetAllProjects(page, pageSize);
 
             if (!response.Success)
             {
@@ -65,17 +65,17 @@ namespace CRMApi.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProject(int id, ProjectDTO NewProjectDTO)
         {
-           if (NewProjectDTO is null)
+            if (NewProjectDTO is null)
             {
                 return BadRequest("Project data is null");
             }
 
-           if (!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var response = await _projectService.UpdateProjectById(id , NewProjectDTO);
+            var response = await _projectService.UpdateProjectById(id, NewProjectDTO);
 
             if (!response.Success)
             {
@@ -100,7 +100,7 @@ namespace CRMApi.Controllers
             }
 
             var response = await _projectService.PatchProjectById(id, patchData);
-            
+
             if (!response.Success)
             {
                 return BadRequest(new { response.Success, response.Message });
@@ -132,6 +132,19 @@ namespace CRMApi.Controllers
 
             return CreatedAtAction(nameof(GetProjectById), new { id = response.Data.Id }, response.Data);
 
+        }
+
+        [HttpDelete("delete-team/{ProjectId}/{TeamId}")]
+        public async Task<IActionResult> DeleteTeam(int ProjectId, int TeamId)
+        {
+            var response = await _projectService.DeleteTeam(ProjectId, TeamId);
+
+            if (!response.Success)
+            {
+                return BadRequest(new { response.Success, response.Message });
+            }
+
+            return NoContent();
         }
     }
 }

@@ -73,7 +73,7 @@ namespace CRMApi.Services.Services
                     ClientName = project.ClientName,
                     Status = project.Status, 
                     
-                    Team = new FullTeamDTO
+                    Team = project.Team is null ? null : new FullTeamDTO
                     {
                         Id = project.Team.Id,
                         Title = project.Team.Title,
@@ -197,7 +197,7 @@ namespace CRMApi.Services.Services
                     ClientName = project.ClientName,
                     Status = project.Status,
 
-                    Team = new FullTeamDTO
+                    Team = project.Team is null ? null : new FullTeamDTO
                     {
                         Id = project.Team.Id,
                         Title = project.Team.Title,
@@ -243,7 +243,7 @@ namespace CRMApi.Services.Services
                 ClientName = project.ClientName,
                 Status = project.Status,
 
-                Team = new FullTeamDTO
+                Team = project.Team is null ? null : new FullTeamDTO
                 {
                     Id = project.Team.Id,
                     Title = project.Team.Title,
