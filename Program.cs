@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using Azure.Storage.Blobs;
 using CRMApi.DbContexts;
 using CRMApi.Services.Interfaces;
@@ -10,21 +11,16 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
+using Serilog;
+using System.Text;
+ 
 var builder = WebApplication.CreateBuilder(args);
 
 
-//Add Serilog
-//var configuration = builder.Configuration;
-
-//Log.Logger = new LoggerConfiguration() 
-//    .ReadFrom.Configuration(configuration)
-//    .CreateLogger();
-
-//builder.Host.UseSerilog();
-
 // Add services to the container.
-builder.Services.AddControllers().AddNewtonsoftJson().AddXmlDataContractSerializerFormatters();
+builder.Services.AddControllers()
+                .AddNewtonsoftJson()
+                .AddXmlDataContractSerializerFormatters();
 
 
 // Configure Swagger (Fixing AddOpenApi) 
@@ -66,32 +62,58 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-var ConnectionString = builder.Configuration.GetConnectionString("DefaultSQLConnection");
-builder.Services.AddDbContext<CRMApiDbContext>(options => options.UseSqlServer(ConnectionString));
 
-//if (builder.Environment.IsDevelopment())
-//{
-//    var KeyVaultUrl = builder.Configuration["KeyVault:KeyVaultUrl"];
 
-//    var credentials = new ClientSecretCredential(KeyVaultDirectoryId, KeyVaultClientId, KeyVaultClientSecret);
-//    var secretClient = new SecretClient(new Uri(KeyVaultUrl), credentials);
+if (builder.Environment.IsDevelopment())
+{
+    var KeyVaultUrl = builder.Configuration["KeyVault:KeyVaultUrl"];
+    var KeyVaultClient = new SecretClient(new Uri(KeyVaultUrl), new DefaultAzureCridential());
 
-//    // Modern way without deprecated overload
-//    builder.Configuration.AddAzureKeyVault(new AzureKeyVaultConfigurationOptions 
-//    {
-//        Vault = new Uri(KeyVaultUrl),
-//        Client = secretClient
-//    });
+    var prodConnectionStringSecret = await KeyVaultClient.GetSecretAsync("ProductionConnectionString");
+    string prodConnectionStringValue = prodConnectionStringSecret.Value.Value;
 
-//    builder.Services.AddSingleton(sp =>
-//    {
-//        var secret = secretClient.GetSecret("AzureStorageConnectionString").Value.Value;
-//        return new BlobServiceClient(secret);
-//    });
-//}
+    var prodStorageServiceSecret = await KeyVaultClient.GetSecretAsync("AzureStorageConnection");
+    string prodStorageServiceValue = prodStorageServiceSecret.Value.Value;
 
+    builder.Services.AddDbContext<CRMApiDbContext>(options => options.UseSqlServer(prodConnectionStringValue));
+
+    builder.Services.AddSingleton(sp =>
+    {
+        return new BlobServiceClient(prodStorageServiceValue);
+    });
+
+    //Configure Serilog for logging
+    Log.Logger = new LoggerConfiguration()
+         .MinimumLevel.Information()
+         .WriteTo.MSSqlServer(
+             connectionString: prodConnectionString,
+             sinkOptions: new Serilog.Sinks.MSSqlServer.MSSqlServerSinkOptions { TableName = "Logs", AutoCreateSqlTable = true }
+         )
+         .CreateLogger();
+
+    builder.Host.UseSerilog(); 
+}
+
+else
+{
+    var ConnectionString = builder.Configuration.GetConnectionString("DefaultSQLConnection");
+    builder.Services.AddDbContext<CRMApiDbContext>(options => options.UseSqlServer(ConnectionString));
+
+    //Inject Blob Storage Service
+    builder.Services.AddSingleton(sp =>
+    {
+        var storageConnectionString = builder.Configuration.GetConnectionString("AzureStorageConnectionString");
+        return new BlobServiceClient(storageConnectionString);
+    });
+}
 
 // Add JWT Authentication
+var KeyVaultUrl = builder.Configuration["KeyVault:KeyVaultUrl"];
+var KeyVaultClient = new SecretClient(new Uri(KeyVaultUrl), new DefaultAzureCridential());
+
+var sengridApiKeySecret = await KeyVaultClient.GetSecretAsync("SengridApiKey");
+string sengridApiKeyValue = sengridSecret.Value.Value;
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -103,7 +125,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(sengridApiKeyValue))
         };
     });
 
@@ -115,30 +137,21 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ITeamService, TeamService>();
 
 
-//Inject Blob Storage Service
-builder.Services.AddSingleton(sp =>
-{
-    var storageConnectionString = builder.Configuration.GetConnectionString("AzureStorageConnectionString");
-return new BlobServiceClient(storageConnectionString);
-});
-
-
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer(); 
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+
     
-    app.UseSwagger();
-    app.UseSwaggerUI(c => 
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "CRM API V1");
-        c.RoutePrefix = ""; 
-    });
-}
+app.UseSwagger();
+app.UseSwaggerUI(c => 
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "CRM API V1");
+    c.RoutePrefix = ""; 
+});
+
 
 app.UseHttpsRedirection();
 

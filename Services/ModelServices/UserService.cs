@@ -191,9 +191,15 @@ namespace CRMApi.Services.Services
         }
 
 
-        private string GenerateJwtToken(User user)
+        private async string GenerateJwtToken(User user)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var KeyVaultUrl = _config["KeyVault:KeyVaultUrl"];
+            var KeyVaultClient = new SecretClient(new Uri(KeyVaultUrl), new DefaultAzureCridential());
+
+            var JwtSecret = await KeyVaultClient.GetSecretAsync("JwtKey");
+            string JwtSecretValue = JwtSecret.Value.Value;
+
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSecretValue));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]

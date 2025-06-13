@@ -275,7 +275,7 @@ namespace CRMApi.Services.ModelServices
             }
 
 
-            if (team.Projects is not null)
+            if (team.Projects is not null && team.Projects.Count is not 0)
             {
                 var project = team.Projects.FirstOrDefault(d => d.Id == ProjectId);
 

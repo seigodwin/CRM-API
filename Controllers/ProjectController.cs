@@ -109,7 +109,7 @@ namespace CRMApi.Controllers
             return NoContent();
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateProject([FromForm] ProjectDTO NewProjectDTO)
         {
