@@ -11,6 +11,6 @@ namespace CRMApi.Domain.DTOs
         public List<FullProjectDTO>? Projects { get; set; }
         public List<FullDeveloperDTO>? Developers { get; set; }
         public FullDeveloperDTO? TeamLead { get; set; }
-        public int? TeamLeadId { get; set; }
+        public string? TeamLeadId { get; set; }
     }
 }

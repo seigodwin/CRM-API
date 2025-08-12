@@ -18,70 +18,83 @@ namespace CRMApi.Controllers
     public class  UserController : ControllerBase
     {
         private readonly IUserService _userService;
-        private readonly IConfiguration _config;
 
-        public UserController(IUserService userService, IConfiguration config)
+        public UserController(IUserService userService)
         {
             _userService = userService;
-            _config = config;
         }
 
-        
-        [HttpPost("sign-up")]
-        public async Task<IActionResult> Register([FromForm] UserDTO userDTO) 
+        [Authorize(Roles = "Admin")]
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromForm] RegistrationRequestDTO userDTO) 
         {
-            if (userDTO is null)
+            if (userDTO is not null && ModelState.IsValid)
             {
-                return BadRequest("User model is null");
+                var response = await _userService.Register(userDTO);
+
+                return response.Success ? Ok(response) : BadRequest(response);
             }
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var response = await _userService.Register(userDTO);
-
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            
-            return Ok("User created successfully");
+            return BadRequest(ModelState);
         }
 
-        
+
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDTO loginDTO)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDTO loginDTO)
         {
-            if (loginDTO is null)
+            if (loginDTO is not null && ModelState.IsValid)
             {
-                return BadRequest("User model is null");        
-            }
+                var response = await _userService.Login(loginDTO);
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
+                return response.Success ? Ok(response) : BadRequest(response);
             }
-            var response = await _userService.Login(loginDTO);
-
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            return Ok(new {response.Data});
+            
+            return BadRequest();
         }
 
 
+    
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDTO model)
+        {
+            if (model is not null && ModelState.IsValid)
+            {
+                var response = await _userService.ForgotPassword(model);
+
+                return response.Success ? Ok(response) : BadRequest(response);
+            }
+
+            return BadRequest(ModelState);
+        }
+
+       
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model)
         {
-            var response = await _userService.ResetPassword(model.Email, model.OTP, model.NewPassword, model.ConfirmPassword);
-            return response.Success ? Ok(response) : BadRequest(response.Message);
+            if (model is not null && ModelState.IsValid)
+            {
+                var response = await _userService.ResetPassword(model);
+
+                return response.Success ? Ok(response) : BadRequest(response); 
+            }
+
+            return BadRequest(ModelState);  
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpPost("assign-role")]
+        public async Task<IActionResult> AssignRole([FromBody] AssignRoleDTO roleDTO) 
+        {
+            if (roleDTO is not null && ModelState.IsValid) 
+            {
+                var response = await _userService.AssignRoleAsync(roleDTO);
+
+                return response.Success ? NoContent() : BadRequest(response);
+            }
+
+            return BadRequest(ModelState);
+
+        }
 
     }
 

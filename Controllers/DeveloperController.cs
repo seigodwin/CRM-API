@@ -1,5 +1,6 @@
 ﻿
 using CRMApi.Domain.DTOs;
+using CRMApi.Domain.DTOs.DeveloperDTOs;
 using CRMApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
@@ -10,12 +11,15 @@ namespace CRMApi.Controllers
 {
     [Route("api/v1/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class DeveloperController(IDeveloperService developerService) : ControllerBase
     {
         private readonly IDeveloperService _developerService = developerService;
-        
 
+
+        
         [HttpGet]
+        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> GetAllDevelopers(int page = 1,  int pageSize = 10)
         {
             var serviceResponse = await _developerService.GetAllDevelopers(page , pageSize);
@@ -25,41 +29,42 @@ namespace CRMApi.Controllers
                 return NotFound(new { serviceResponse.Success, serviceResponse.Message });
             }
 
-            return Ok(serviceResponse.Data);
+            return Ok(serviceResponse);
         }
 
+        
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetDeveloperById(int id)
+        [Authorize(Roles = "Admin,Employee")]
+        public async Task<IActionResult> GetDeveloperById(string id)
         {
             var serviceResponse = await _developerService.GetDeveloperById(id);
 
             if (!serviceResponse.Success)
             {
-                return NotFound(new { serviceResponse.Success, serviceResponse.Message });
+                return NotFound(new {serviceResponse.Message });
             }
 
-            return Ok(serviceResponse.Data);
+            return Ok(serviceResponse);
         }
 
 
-        [Authorize]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDeveloperById(int id)
+        public async Task<IActionResult> DeleteDeveloperById(string id)
         {
             var serviceResponse = await _developerService.DeleteDeveloperById(id);
 
             if (!serviceResponse.Success)
             {
-                return NotFound(new { serviceResponse.Success, serviceResponse.Message });
+                return NotFound(new {serviceResponse.Message });
             }
 
             return NoContent();
         }
 
 
-        //[Authorize]
+      
         [HttpPost]
-        public async Task<IActionResult> CreateDeveloper([FromForm] DeveloperDTO developerDTO)
+        public async Task<IActionResult> CreateDeveloper([FromForm] DevRegistrationRequestDTO developerDTO)
         {
             
            if (!ModelState.IsValid)
@@ -74,13 +79,12 @@ namespace CRMApi.Controllers
                 return BadRequest(new { serviceResponse.Success, serviceResponse.Message });
             }
 
-            return CreatedAtAction(nameof(GetDeveloperById), new { id = serviceResponse.Data.Id }, serviceResponse.Data);
+            return CreatedAtAction(nameof(GetDeveloperById), new { id = serviceResponse.Data?.Id }, serviceResponse.Data);
         }
 
 
-        [Authorize]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDeveloper(int id, DeveloperDTO UpdatedDeveloperDTO)
+        public async Task<IActionResult> UpdateDeveloper(string id, UpdateDevRequestDTO UpdatedDeveloperDTO)
         {
             if (UpdatedDeveloperDTO is null)
             {
@@ -102,9 +106,9 @@ namespace CRMApi.Controllers
             return NoContent();
         }
 
-        [Authorize]
+
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PatchDeveloperById (int id, JsonPatchDocument<DeveloperDTO> patchData)
+        public async Task<IActionResult> PatchDeveloperById (string id, JsonPatchDocument<PatchDevRequestDTO> patchData)
         {
             if (patchData is null)
             {
@@ -126,5 +130,7 @@ namespace CRMApi.Controllers
             return NoContent();
 
         }
+
+        
     }
 }

@@ -7,151 +7,109 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CRMApi.Controllers
+namespace CRMApi.Controllers 
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/[controller]")] 
     [ApiController]
-    public class TeamController(ITeamService teamService) : ControllerBase
+    [Authorize(Roles = "Admin")] 
+    public class TeamController(ITeamService teamService) : ControllerBase 
     {
-        private readonly ITeamService _teamService = teamService;
+        private readonly ITeamService _teamService = teamService; 
 
-        [Authorize]
-        [HttpPost("assign-developer/{DeveloperId}/{TeamId}")]
-        public async Task<IActionResult> AssignDeveloperToTeam(int DeveloperId, int TeamId)
+        
+        [HttpPost("assign-developer/{DeveloperId}/{TeamId}")] 
+        public async Task<IActionResult> AssignDeveloperToTeam(string DeveloperId, int TeamId) 
         {
-            var response = await _teamService.AssignDeveloperToTeam(DeveloperId, TeamId);
+            var response = await _teamService.AssignDeveloperToTeam(DeveloperId, TeamId); 
 
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            return Ok( new {response.Success , response.Message});
+            return response.Success ? NoContent() : BadRequest(response);  
         }
 
-        [Authorize]
+
         [HttpPost("assign-project/{ProjectId}/{TeamId}")]
         public async Task<IActionResult> AssignProjectToTeam(int ProjectId, int TeamId)
         {
             var response = await _teamService.AssignProjectToTeam(ProjectId, TeamId);
 
-            if (!response.Success) 
-            {
-                return BadRequest(new { response.Success, response.Message });        
-            }
-
-            return Ok(new { response.Success, response.Message });
+            return response.Success? NoContent() : BadRequest(response);
 
         }
 
-        [Authorize]
+
         [HttpPost]
         public async Task<IActionResult> CreateTeam([FromForm] TeamDTO teamDTO)
         {
             var response = await _teamService.CreateTeam(teamDTO);
 
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            return CreatedAtAction(nameof(GetTeamById), new { id = response.Data.Id }, response.Data);
+            return response.Success ? CreatedAtAction(nameof(GetTeamById), new { id = response.Data?.Id }, response.Data) : BadRequest(response);
         }
 
-        [Authorize]
+
+
         [HttpDelete("delete-developer/{TeamId}/{DeveloperId}")]
-        public async Task<IActionResult> DeleteDeveloper(int TeamId, int DeveloperId)
+        public async Task<IActionResult> DeleteDeveloper(int TeamId, string DeveloperId)
         {
             var response = await _teamService.DeleteDeveloper(TeamId, DeveloperId);
 
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            return NotFound();
+            return response.Success ? NoContent() : BadRequest(response);
         }
 
-        [Authorize]
+
         [HttpDelete("delete-project/{TeamId}/{ProjectId}")]
         public async Task<IActionResult> DeleteProject(int TeamId, int ProjectId)
         {
             var response = await _teamService.DeleteProject(TeamId, ProjectId);
 
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            return NoContent();
+            return response.Success ? NoContent() : BadRequest(response);
         }
 
-        [Authorize]
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTeamById(int id)
         {
             var response = await _teamService.DeleteTeamById(id);
 
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            return NoContent();
+            return response.Success ? NoContent() : BadRequest(response);
         }
 
+
+        [Authorize(Roles = "Admin,Employee")]
         [HttpGet]
         public async Task<IActionResult> GetAllTeams(int Page = 1, int PageSize = 10)
         {
             var response = await _teamService.GetAllTeams(Page, PageSize);
 
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            return Ok(response.Data);
+            return response.Success ? Ok(response) : NotFound(response);
         }
 
+
+        [Authorize(Roles = "Admin,Employee")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTeamById(int id)
         {
             var response = await _teamService.DeleteTeamById(id);
 
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            return Ok(response.Data);
+            return response.Success ? Ok(response) : NotFound(response); 
         }
 
-        [Authorize]
+
+
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchTeamById(int id, JsonPatchDocument<TeamDTO> patchData)
         {
             var response = await _teamService.PatchTeamById(id, patchData);
 
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            return NoContent();
+            return response.Success ? NoContent() : BadRequest(response);
         }
 
-        [Authorize]
+
+
         [HttpPut("{id}")] 
         public async Task<IActionResult> UpdateTeamById(int id, TeamDTO teamDTO)    
         {
             var response = await _teamService.UpdateTeamById(id, teamDTO);
 
-            if (!response.Success)
-            {
-                return BadRequest(new { response.Success, response.Message });
-            }
-
-            return NoContent();
+            return response.Success ? NoContent() : BadRequest(response);
         }
 
     }

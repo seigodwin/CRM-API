@@ -6,19 +6,38 @@ using SendGrid.Helpers.Mail;
 
 namespace CRMApi.Utility.Services
 {
-    public class EmailService(IConfiguration config) : IEmailService
+    public class EmailService : IEmailService
     {
-        var KeyVaultUrl = builder.Configuration["KeyVault:KeyVaultUrl"];
-        var KeyVaultClient = new SecretClient(new Uri(KeyVaultUrl), new DefaultAzureCridential());
+        private readonly string keyVaultUrl;
 
-        var sengridApiKeySecret = await KeyVaultClient.GetSecretAsync("SengridApiKey");
-        string sengridApiKeyValue = sengridSecret.Value.Value;
-        public async Task<bool> SendEmail(string toEmail, string subject, string body)
+        private readonly SecretClient keyVaultClient;
+
+       // private readonly string _sendGridApiKey;
+
+        public EmailService(IConfiguration config)
         {
-            var client = new SendGridClient(sengridApiKeyValue);
+            //_sendGridApiKey = config["SendGrid:ApiKey"];
+
+            keyVaultUrl = config["KeyVault:KeyVaultUrl"];
+
+            if (keyVaultUrl is not null)
+            {
+                keyVaultClient = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential());
+            }
+            
+        }
+
+        public async Task<bool> SendEmailAsync(string toEmail, string subject, string plainTextBody, string htmlBody)
+        {
+            var SendGridApiKey = await keyVaultClient.GetSecretAsync("SendgridApiKey");
+            var SendGridApiKeyValue = SendGridApiKey.Value.Value;
+
+            var client = new SendGridClient(SendGridApiKeyValue);
             var from = new EmailAddress("crmapi135@gmail.com", "CRM Api");
             var to = new EmailAddress(toEmail);
-            var msg = MailHelper.CreateSingleEmail(from, to, subject, body, body);
+
+
+            var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextBody, htmlBody);
 
             var response = await client.SendEmailAsync(msg);
             return response.StatusCode == System.Net.HttpStatusCode.Accepted;

@@ -1,4 +1,4 @@
-﻿namespace CRMApi.Utility.Services
+﻿namespace CRMApi.Utility
 {
     public class ServiceResponse<T>
     {
