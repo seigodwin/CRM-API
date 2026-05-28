@@ -1,5 +1,4 @@
 ﻿
-using Azure.Storage.Blobs;
 using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.Models;
@@ -10,9 +9,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRMApi.Services.ModelServices
 {
-    public class TeamService(AppDbContext context, BlobServiceClient _blobServiceClient) : ITeamService
+    public class TeamService(AppDbContext context) : ITeamService
     {
-        private readonly BlobServiceClient _blobServiceClient = _blobServiceClient;
         private readonly string _blobContainerName = "photos";
         private readonly AppDbContext _context = context;
 
@@ -137,26 +135,7 @@ namespace CRMApi.Services.ModelServices
 
             try
             {
-                if (teamDTO.Image != null && teamDTO.Image.Length > 0)
-                {
-                    // Get a reference to the blob container
-                    var containerClient = _blobServiceClient.GetBlobContainerClient(_blobContainerName);
-
-                    // Generate a unique file name for the blob
-                    string uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(teamDTO.Image.FileName)}";
-
-                    // Get a reference to the blob
-                    var blobClient = containerClient.GetBlobClient(uniqueFileName);
-
-                    // Upload the file to Blob Storage
-                    using (var stream = teamDTO.Image.OpenReadStream())
-                    {
-                        await blobClient.UploadAsync(stream, true); // overwrite if it exists
-                    }
-
-                    // Get the public URL of the uploaded blob   
-                    team.ImageUrl = blobClient.Uri.ToString();
-                }
+    
 
                 await _context.Teams.AddAsync(team);
                 await _context.SaveChangesAsync();
@@ -183,14 +162,12 @@ namespace CRMApi.Services.ModelServices
                         FirstName = d.FirstName,
                         SecondName = d.SecondName,
                         UserName = d.UserName,
-                        ImageUrl = d.ImageUrl,
                         PhoneNumber = d.PhoneNumber,
                         Email = d.Email,
                     }).ToList(),
 
                     ImageUrl = team.ImageUrl
                 };
-
 
                 response.Message = "Team created Successfully";
                 response.Data = TeamDTO;
@@ -379,7 +356,6 @@ namespace CRMApi.Services.ModelServices
                         FirstName = d.FirstName,
                         SecondName = d.SecondName,
                         UserName = d.UserName,
-                        ImageUrl = d.ImageUrl,
                         PhoneNumber = d.PhoneNumber,
                         Email = d.Email,
                     }).ToList(),
@@ -401,7 +377,6 @@ namespace CRMApi.Services.ModelServices
                         UserName = team.TeamLead.UserName,
                         Email = team.TeamLead.Email,
                         PhoneNumber = team.TeamLead.PhoneNumber,
-                        ImageUrl = team.TeamLead.ImageUrl,
                     },
 
                 });
@@ -530,27 +505,6 @@ namespace CRMApi.Services.ModelServices
                 team.Title = teamDTO.Title;
                 team.Description = teamDTO.Description;
                 team.TeamLeadId = teamDTO.TeamLeadId;
-
-                if (teamDTO.Image != null && teamDTO.Image.Length > 0)
-                {
-                    // Get a reference to the blob container
-                    var containerClient = _blobServiceClient.GetBlobContainerClient(_blobContainerName);
-
-                    // Generate a unique file name for the blob
-                    string uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(teamDTO.Image.FileName)}";
-
-                    // Get a reference to the blob
-                    var blobClient = containerClient.GetBlobClient(uniqueFileName);
-
-                    // Upload the file to Blob Storage
-                    using (var stream = teamDTO.Image.OpenReadStream())
-                    {
-                        await blobClient.UploadAsync(stream, true); // overwrite if it exists
-                    }
-
-                    // Get the public URL of the uploaded blob   
-                    team.ImageUrl = blobClient.Uri.ToString();
-                }
 
                 response.Message = "Team Updated Successfully";
             }

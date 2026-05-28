@@ -5,7 +5,6 @@ namespace CRMApi.Domain.DTOs
 {
     public class RegistrationRequestDTO
     {
-        public IFormFile? Image { get; set; }
         public required string FirstName { get; set; }
         public required string LastName { get; set; }
         public required string UserName { get; set; }

@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # 1. TRACK YOUR SOURCE CODE DEPENDENCIES
+  - package-ecosystem: "nuget"      
+    directory: "/"                
+    schedule:
+      interval: "monthly"         
+      day: "monday" 
+    open-pull-requests-limit: 5   
+
+  # 2. TRACK YOUR CI/CD ACTIONS THEMSELVES (Highly Recommended)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

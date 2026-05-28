@@ -1,6 +1,6 @@
 ﻿using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
 using CRMApi.Utility.Interfaces;
+using Microsoft.Extensions.Options;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
@@ -8,32 +8,19 @@ namespace CRMApi.Utility.Services
 {
     public class EmailService : IEmailService
     {
-        private readonly string keyVaultUrl;
+       private AppSettings _appSettings;
 
-        private readonly SecretClient keyVaultClient;
-
-       // private readonly string _sendGridApiKey;
-
-        public EmailService(IConfiguration config)
+        public EmailService(IOptions<AppSettings> appSettings)
         {
-            //_sendGridApiKey = config["SendGrid:ApiKey"];
-
-            keyVaultUrl = config["KeyVault:KeyVaultUrl"];
-
-            if (keyVaultUrl is not null)
-            {
-                keyVaultClient = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential());
-            }
-            
+            _appSettings = appSettings.Value;
         }
 
         public async Task<bool> SendEmailAsync(string toEmail, string subject, string plainTextBody, string htmlBody)
         {
-            var SendGridApiKey = await keyVaultClient.GetSecretAsync("SendgridApiKey");
-            var SendGridApiKeyValue = SendGridApiKey.Value.Value;
+            var SendGridApiKeyValue = _appSettings.SendGridApiKey;
 
             var client = new SendGridClient(SendGridApiKeyValue);
-            var from = new EmailAddress("crmapi135@gmail.com", "CRM Api");
+            var from = new EmailAddress(_appSettings.FromEmail, "CRM Api");
             var to = new EmailAddress(toEmail);
 
 

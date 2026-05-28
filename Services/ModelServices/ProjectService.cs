@@ -1,4 +1,4 @@
-﻿using Azure.Storage.Blobs;
+﻿
 using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.DTOs.ProjectDTOs;
@@ -12,9 +12,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRMApi.Services.Services
 {
-    public class ProjectService(AppDbContext context, BlobServiceClient blobServiceClient) : IProjectService
+    public class ProjectService(AppDbContext context) : IProjectService
     {
-        private readonly BlobServiceClient _blobServiceClient = blobServiceClient;
+     
         private readonly string _blobContainerName = "photos";
         private readonly AppDbContext _context = context;
 
@@ -41,28 +41,7 @@ namespace CRMApi.Services.Services
 
             try
             {
-                if (projectDTO.Image != null && projectDTO.Image.Length > 0)
-                {
-                    // Get a reference to the blob container
-                    var containerClient = _blobServiceClient.GetBlobContainerClient(_blobContainerName);
-
-                    // Generate a unique file name for the blob
-                    string uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(projectDTO.Image.FileName)}";
-
-                    // Get a reference to the blob
-                    var blobClient = containerClient.GetBlobClient(uniqueFileName);
-
-                    // Upload the file to Blob Storage
-                    using (var stream = projectDTO.Image.OpenReadStream())
-                    {
-                        await blobClient.UploadAsync(stream, true); // overwrite if it exists
-                    }
-
-                    // Get the public URL of the uploaded blob
-                    project.ImageUrl = blobClient.Uri.ToString();  
-                    
-                }
-
+               
                 await _context.Projects.AddAsync(project);
                 await _context.SaveChangesAsync();
 
@@ -353,27 +332,6 @@ namespace CRMApi.Services.Services
 
             try
             {
-
-                if (projectDTO.Image is not null && projectDTO.Image.Length > 0)
-                {
-                    // Get a reference to the blob container
-                    var containerClient = _blobServiceClient.GetBlobContainerClient(_blobContainerName);
-
-                    // Generate a unique file name for the blob
-                    string uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(projectDTO.Image.FileName)}";
-
-                    // Get a reference to the blob
-                    var blobClient = containerClient.GetBlobClient(uniqueFileName);
-
-                    // Upload the file to Blob Storage
-                    using (var stream = projectDTO.Image.OpenReadStream())
-                    {
-                        await blobClient.UploadAsync(stream, true); // overwrite if it exists
-                    }
-
-                    // Get the public URL of the uploaded blob
-                    project.ImageUrl = blobClient.Uri.ToString();
-                }
 
                 await _context.SaveChangesAsync();
 

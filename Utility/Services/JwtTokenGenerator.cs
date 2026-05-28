@@ -1,5 +1,4 @@
 ﻿using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
 using CRMApi.Domain.Models;
 using CRMApi.Utility.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -19,26 +18,21 @@ namespace CRMApi.Utility.Services
        
         private readonly IConfiguration _config;
         private readonly UserManager<ApplicationUser> _userManager;
-        public JwtTokenGenerator( IConfiguration config, UserManager<ApplicationUser> userManager)
+        private readonly AppSettings _appSettings;
+        public JwtTokenGenerator( IConfiguration config, UserManager<ApplicationUser> userManager
+        , IOptions<AppSettings> appSettings)
         {
             _config = config;
             _userManager = userManager;
+            _appSettings = appSettings.Value;
 
         }
 
         public async Task<string> GenerateTokenAsync(ApplicationUser user)
         {
             var tokenHandler = new JsonWebTokenHandler();
-            
-            //Development
-            //var key = Encoding.UTF8.GetBytes(_config["JwtOptions:Key"]!);
 
-            //Production
-            var keyVaultUrl = _config["KeyVault:KeyVaultUrl"]!;
-            var client = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential());
-
-            var JwtKeySecret = await client.GetSecretAsync("JwtKey");
-            var JwtKeyValue = JwtKeySecret.Value.Value;
+            var JwtKeyValue = _appSettings.JwtSecret;
 
             var key = Encoding.UTF8.GetBytes(JwtKeyValue);
 

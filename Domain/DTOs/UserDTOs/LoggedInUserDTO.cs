@@ -6,7 +6,6 @@ namespace CRMApi.Domain.DTOs
     {
 
         public string? Id { get; set; }
-        public IFormFile? Image { get; set; }
         public  string? FirstName { get; set; }
         public  string? LastName { get; set; }
         public string? UserName { get; set; }

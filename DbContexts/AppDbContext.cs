@@ -20,10 +20,8 @@ namespace CRMApi.DbContexts
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<ApplicationUser>()
-                .HasIndex(u => u.PhoneNumber)
+                .HasIndex(u => u.Email)
                 .IsUnique();
-
-
 
             // === Team - TeamLead (One-to-Many) === 
             modelBuilder.Entity<Team>()

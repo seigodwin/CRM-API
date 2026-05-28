@@ -1,5 +1,4 @@
 ﻿
-using Azure.Storage.Blobs;
 using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.DTOs.DeveloperDTOs;
@@ -20,12 +19,9 @@ using System.Threading.Tasks;
 
 namespace CRMApi.Services.Services
 {
-    public class DeveloperService(AppDbContext context, BlobServiceClient blobServiceClient, 
-        UserManager<ApplicationUser> employeeManager, IJwtTokenGenerator tokenGenerator) : IDeveloperService
+    public class DeveloperService(AppDbContext context, UserManager<ApplicationUser> employeeManager, IJwtTokenGenerator tokenGenerator) : IDeveloperService
     {
         private readonly AppDbContext _context = context;
-        private readonly BlobServiceClient _blobServiceClient = blobServiceClient;
-        private readonly string _blobContainerName = "photos";
         private readonly UserManager<ApplicationUser> _employeeManager = employeeManager;
         private readonly IJwtTokenGenerator _tokenGenerator = tokenGenerator;
         
@@ -68,26 +64,6 @@ namespace CRMApi.Services.Services
 
             try
             {
-                if (developerDTO.Image != null && developerDTO.Image.Length > 0)
-                {
-                    // Get a reference to the blob container
-                    var containerClient = _blobServiceClient.GetBlobContainerClient(_blobContainerName);
-
-                    // Generate a unique file name for the blob
-                    string uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(developerDTO.Image.FileName)}";
-
-                    // Get a reference to the blob
-                    var blobClient = containerClient.GetBlobClient(uniqueFileName);
-
-                    // Upload the file to Blob Storage
-                    using (var stream = developerDTO.Image.OpenReadStream())
-                    {
-                        await blobClient.UploadAsync(stream, true); // overwrite if it exists
-                    }
-
-                    // Get the public URL of the uploaded blob
-                    developer.ImageUrl = blobClient.Uri.ToString();
-                }
 
                 await _employeeManager.CreateAsync(developer, developerDTO.Password);
                 await _context.SaveChangesAsync();
@@ -102,7 +78,6 @@ namespace CRMApi.Services.Services
                     FirstName = developer.FirstName,
                     SecondName= developer.SecondName,
                     UserName = developer.UserName,  
-                    ImageUrl = developer.ImageUrl,
                     Email = developer.Email,
                     PhoneNumber = developer.PhoneNumber,
                     Stack = developer.Stack,
@@ -189,7 +164,6 @@ namespace CRMApi.Services.Services
                     FirstName = developer.FirstName,
                     SecondName = developer.SecondName,
                     UserName = developer.UserName,
-                    ImageUrl = developer.ImageUrl,
                     Email = developer.Email,
                     PhoneNumber = developer.PhoneNumber,
                     Stack = developer.Stack,
@@ -234,7 +208,6 @@ namespace CRMApi.Services.Services
                 FirstName = developer.FirstName,
                 SecondName = developer.SecondName,
                 UserName = developer.UserName,
-                ImageUrl = developer.ImageUrl,
                 Email = developer.Email,
                 PhoneNumber = developer.PhoneNumber,
                 Stack = developer.Stack,
@@ -376,31 +349,9 @@ namespace CRMApi.Services.Services
 
             
             try
-            { 
-                if(developerDTO.Image is not null && developerDTO.Image.Length > 0)
-                {
-                    // Get a reference to the blob container
-                    var containerClient = _blobServiceClient.GetBlobContainerClient(_blobContainerName);
-
-                    // Generate a unique file name for the blob
-                    string uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(developerDTO.Image.FileName)}";
-
-                    // Get a reference to the blob
-                    var blobClient = containerClient.GetBlobClient(uniqueFileName);
-
-                    // Upload the file to Blob Storage
-                    using (var stream = developerDTO.Image.OpenReadStream())
-                    {
-                        await blobClient.UploadAsync(stream, true); // overwrite if it exists
-                    }
-
-                    // Get the public URL of the uploaded blob
-                    developer.ImageUrl = blobClient.Uri.ToString();
-                }
-
+            {
                 await _context.SaveChangesAsync();
-
-                response.Message = "Developer Updated Successfully";
+                response.Message = "Developer updated successfully";
             }
 
             catch (DbUpdateException dbEx)

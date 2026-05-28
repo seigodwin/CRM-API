@@ -4,7 +4,6 @@ namespace CRMApi.Domain.DTOs.DeveloperDTOs
 {
     public class UpdateDevRequestDTO
     {
-        public IFormFile? Image { get; set; }
         public string? FirstName { get; set; }
         public string? SecondName { get; set; }
         public required string UserName { get; set; }

@@ -1,5 +1,4 @@
 ﻿using Azure.Core;
-using Azure.Storage.Blobs;
 using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.Models;
@@ -20,10 +19,8 @@ namespace CRMApi.Services.Services
 {
     public class UserService(AppDbContext context,IEmailService emailService,
        UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
-       BlobServiceClient blobServiceClient, IJwtTokenGenerator jwtTokenGenerator) : IUserService
+        IJwtTokenGenerator jwtTokenGenerator) : IUserService
     {
-        private readonly BlobServiceClient _blobServiceClient = blobServiceClient;
-        private readonly string _blobContainerName = "photos";
         private readonly IEmailService _emailService = emailService;
         private readonly AppDbContext _context = context;
         private readonly RoleManager<IdentityRole> _roleManager = roleManager;
@@ -114,26 +111,6 @@ namespace CRMApi.Services.Services
 
             try 
             {
-                if(userDTO.Image is not null && userDTO.Image.Length > 0)
-                {
-                    // Get a reference to the blob container
-                    var containerClient = _blobServiceClient.GetBlobContainerClient(_blobContainerName);
-
-                    // Generate a unique file name for the blob
-                    string uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(userDTO.Image.FileName)}";
-
-                    // Get a reference to the blob
-                    var blobClient = containerClient.GetBlobClient(uniqueFileName);
-
-                    // Upload the file to Blob Storage
-                    using (var stream = userDTO.Image.OpenReadStream())
-                    {
-                        await blobClient.UploadAsync(stream, true); // overwrite if it exists
-                    }
-
-                    // Get the public URL of the uploaded blob
-                    user.ImageUrl = blobClient.Uri.ToString();
-                }
 
                 var results = await _userManager.CreateAsync(user, userDTO.Password);
 

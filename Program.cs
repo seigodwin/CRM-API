@@ -1,7 +1,5 @@
-﻿using APIWeaver;
+﻿
 using Azure.Identity;
-using Azure.Security.KeyVault.Secrets;
-using Azure.Storage.Blobs;
 using CRMApi.DbContexts;
 using CRMApi.Domain.Models;
 using CRMApi.Services.Interfaces;
@@ -14,7 +12,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Security.Claims;
@@ -29,86 +26,66 @@ public class Program
         DotNetEnv.Env.Load();
         builder.Configuration.AddEnvironmentVariables();
 
-
+        builder.Services.AddOpenApi();
         // Add controllers, JSON, XML
         builder.Services.AddControllers()
             .AddNewtonsoftJson()
             .AddXmlDataContractSerializerFormatters();
 
-        builder.Services.AddOpenApi();
+        //Add DbContext
+        var connectionString = builder.Environment.IsProduction() ?
+        builder.Configuration["PRODUCTION_SQL_DB_CONNECTION_STRING"] :
+        builder.Configuration["DEFAULT_SQL_DB_CONNECTION_STRING"];
 
-       // Configure OpenApi with ApiWeaver.OpenApi
-        builder.Services.AddOpenApi(options =>
+        if(string.IsNullOrEmpty(connectionString))
         {
-            options.AddSecurityScheme(JwtBearerDefaults.AuthenticationScheme, scheme =>
-            {
-                scheme.In = ParameterLocation.Header;
-                scheme.Type = SecuritySchemeType.Http;
-                scheme.Scheme = JwtBearerDefaults.AuthenticationScheme;
-                scheme.BearerFormat = "JWT";
-            });
-            options.AddAuthResponse();
+            throw new InvalidOperationException("Database connection string is not configured.");
+        }
+
+        builder.Services.AddDbContext<AppDbContext>(options =>
+        {
+        options.UseNpgsql(connectionString);
+        options.UseSnakeCaseNamingConvention();
+        });
+
+        // if (builder.Environment.IsProduction())
+        // {
+
+        //     // //Configure Serilog for logging
+        //     // Log.Logger = new LoggerConfiguration()
+        //     //     .MinimumLevel.Information()
+        //     //     .WriteTo.MSSqlServer(
+        //     //         connectionString: prodConnectionString,
+        //     //         sinkOptions: new Serilog.Sinks.MSSqlServer.MSSqlServerSinkOptions { TableName = "Logs", AutoCreateSqlTable = true }
+        //     //     )
+        //     //     .CreateLogger();
+
+        //     // builder.Host.UseSerilog();
+        // }
+
+
+        //Configure IOptions for AppSettings
+        builder.Services.Configure<AppSettings>(options =>
+        {
+            options.JwtSecret = builder.Configuration["JWT_SECRET"]!;
+            options.JwtIssuer = builder.Configuration["JWT_ISSUER"]!;
+            options.JwtAudience = builder.Configuration["JWT_AUDIENCE"]!;
+            options.DefaultSqlDbConnectionString = builder.Configuration["DEFAULT_SQL_DB_CONNECTION_STRING"]!;
+            options.DefaultRedisConnectionString = builder.Configuration["DEFAULT_REDIS_CONNECTION_STRING"]!;
+            options.SendGridApiKey = builder.Configuration["SENDGRID_API_KEY"]!;
+            options.FromEmail = builder.Configuration["EMAIL_FROM"]!;
         });
 
 
-
-        if (builder.Environment.IsProduction())
-        {
-            string VaultUrl = builder.Configuration["KEY_VAULT_URI"]!;
-            var keyVaultClient = new SecretClient(new Uri(VaultUrl), new DefaultAzureCredential());
-
-            // Fetch production secrets from Key Vault 
-            var prodSqlSecret = await keyVaultClient.GetSecretAsync("ProdDbConString");
-            var prodStorageSecret = await keyVaultClient.GetSecretAsync("AzureStorageConnectionString");
-
-            var prodConnectionString = prodSqlSecret.Value.Value;
-            var prodStorageConnectionString = prodStorageSecret.Value.Value;
-
-            builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(prodConnectionString));
-
-
-            builder.Services.AddSingleton(sp =>
-                new BlobServiceClient(prodStorageConnectionString));
-
-            //Configure Serilog for logging
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .WriteTo.MSSqlServer(
-                    connectionString: prodConnectionString,
-                    sinkOptions: new Serilog.Sinks.MSSqlServer.MSSqlServerSinkOptions { TableName = "Logs", AutoCreateSqlTable = true }
-                )
-                .CreateLogger();
-
-            builder.Host.UseSerilog();
-        }
-
-        else
-        {
-
-            var devStorageSecret = builder.Configuration["BLOB_STORAGE_CONNECTION_STRING"];
-
-            var devDbConnection = builder.Configuration.GetConnectionString("DefaultSQLConnection");
-
-            builder.Services.AddDbContext<AppDbContext>(options =>
-             options.UseSqlServer(devDbConnection));
-
-            
-            builder.Services.AddSingleton(sp =>
-                new BlobServiceClient(devStorageSecret));
-
-        }
-
-
-        builder.Services.AddCors(options =>
-        {
-            options.AddPolicy("AllowFrontendOnly", policy =>
-            {
-                policy.WithOrigins("https://projsync.vercel.app/")
-                      .AllowAnyMethod()
-                      .AllowAnyHeader();
-            });
-        });
+        // builder.Services.AddCors(options =>
+        // {
+        //     options.AddPolicy("AllowFrontendOnly", policy =>
+        //     {
+        //         policy.WithOrigins("https://projsync.vercel.app/")
+        //               .AllowAnyMethod()
+        //               .AllowAnyHeader();
+        //     });
+        // });
 
         // Register model services
         builder.Services.AddScoped<IDeveloperService, DeveloperService>();
@@ -130,19 +107,13 @@ public class Program
         //Register Jwt
         builder.Services.AddAuthorization();
 
-        //Development
-        //var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtOptions:Key"]!);
-
         //Production
         try
         {
-            var keyVaultUrl = builder.Configuration["KEY_VAULT_URI"]!;
-            var client = new SecretClient(new Uri(keyVaultUrl), new DefaultAzureCredential());
-
-            var JwtKeySecret = await client.GetSecretAsync("JwtKey");
-            var JwtKeyValue = JwtKeySecret.Value.Value;
+     
+            var JwtKeySecret = builder.Configuration["JWT_SECRET"]!;
              
-            var key = Encoding.UTF8.GetBytes(JwtKeyValue);
+            var key = Encoding.UTF8.GetBytes(JwtKeySecret);
 
             builder.Services.AddAuthentication(options =>
             {
@@ -204,11 +175,8 @@ public class Program
 
             if (!db.Users.Any())
             {
-                var VaultUrl = builder.Configuration["KeyVault:KeyVaultUrl"]!;
-                var client = new SecretClient(new Uri(VaultUrl), new DefaultAzureCredential());
-
-                var passwordSecret = await client.GetSecretAsync("FirstAdminPassword");
-                var passwordValue = passwordSecret.Value.Value;
+                
+                var passwordValue = builder.Configuration["ADMIN_PASSWORD"]!;
 
                 var admin = new ApplicationUser
                 {
@@ -232,20 +200,19 @@ public class Program
 
         // Configure the HTTP request pipeline.
 
-        app.MapOpenApi();
-            
-         app.MapScalarApiReference("",options =>
+        app.MapOpenApi();    
+         app.MapScalarApiReference( "", options =>
          {
              options.Theme = ScalarTheme.BluePlanet;
-         }
-         );   
+             options.WithTitle("CRM API Documentation");
+         });
+         
 
-       
         app.UseHttpsRedirection(); 
         app.UseRouting();
-        app.UseCors("AllowFrontendOnly"); 
-        app.UseAuthentication();
-        app.UseAuthorization(); 
+        //app.UseCors("AllowFrontendOnly"); 
+        //app.UseAuthentication();
+        //app.UseAuthorization(); 
         app.MapControllers();
          
         await app.RunAsync();

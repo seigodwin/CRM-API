@@ -14,7 +14,7 @@ namespace CRMApi.Controllers
 {
     [Route("api/v1/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin,Employee")]
+    //[Authorize(Roles = "Admin,Employee")]
     public class ProjectController(IProjectService projectService) : ControllerBase
     {
         private readonly IProjectService _projectService = projectService;
