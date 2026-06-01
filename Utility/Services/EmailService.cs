@@ -1,4 +1,4 @@
-﻿using Azure.Identity;
+﻿
 using CRMApi.Utility.Interfaces;
 using Microsoft.Extensions.Options;
 using SendGrid;

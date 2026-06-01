@@ -1,5 +1,4 @@
 ﻿
-using Azure.Identity;
 using CRMApi.DbContexts;
 using CRMApi.Domain.Models;
 using CRMApi.Services.Interfaces;
@@ -52,6 +51,12 @@ public class Program
         options.UseSnakeCaseNamingConvention();
         });
 
+        
+        //Register Identity
+        builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AddDefaultTokenProviders(); 
+
         // if (builder.Environment.IsProduction())
         // {
 
@@ -94,18 +99,13 @@ public class Program
         // Register model services
         builder.Services.AddScoped<IDeveloperService, DeveloperService>();
         builder.Services.AddScoped<IProjectService, ProjectService>();
-        //builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<ITeamService, TeamService>();
 
         // Register utility services
         builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         builder.Services.AddSingleton<IEmailService, EmailService>();
         builder.Services.AddTransient<RoleSeeder>();
-
-        //Register Identity
-        builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-                .AddEntityFrameworkStores<AppDbContext>()
-                .AddDefaultTokenProviders(); 
        
 
         //Production
@@ -137,6 +137,7 @@ public class Program
                     ClockSkew = TimeSpan.Zero,
 
                     RoleClaimType = ClaimTypes.Role,
+                    
                 };
             });
         }
@@ -213,8 +214,8 @@ public class Program
         app.UseHttpsRedirection(); 
         app.UseRouting();
         //app.UseCors("AllowFrontendOnly"); 
-        //app.UseAuthentication();
-        //app.UseAuthorization(); 
+        app.UseAuthentication();
+        app.UseAuthorization(); 
         app.MapControllers();
          
         await app.RunAsync();

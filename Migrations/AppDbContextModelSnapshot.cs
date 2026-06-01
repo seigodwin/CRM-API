@@ -58,6 +58,11 @@ namespace CRMApi.Migrations
                         .HasColumnType("text")
                         .HasColumnName("first_name");
 
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("last_name");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean")
                         .HasColumnName("lockout_enabled");
@@ -88,18 +93,9 @@ namespace CRMApi.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("phone_number_confirmed");
 
-                    b.Property<string>("SecondName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("second_name");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text")
                         .HasColumnName("security_stamp");
-
-                    b.Property<int?>("TeamId")
-                        .HasColumnType("integer")
-                        .HasColumnName("team_id");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean")
@@ -123,9 +119,6 @@ namespace CRMApi.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
-
-                    b.HasIndex("TeamId")
-                        .HasDatabaseName("ix_asp_net_users_team_id");
 
                     b.ToTable("AspNetUsers", (string)null);
 
@@ -165,10 +158,6 @@ namespace CRMApi.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("image_url");
-
                     b.Property<int>("Status")
                         .HasColumnType("integer")
                         .HasColumnName("status");
@@ -205,14 +194,6 @@ namespace CRMApi.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<string>("DeveloperId")
-                        .HasColumnType("text")
-                        .HasColumnName("developer_id");
-
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("image_url");
-
                     b.Property<string>("TeamLeadId")
                         .HasColumnType("text")
                         .HasColumnName("team_lead_id");
@@ -225,13 +206,29 @@ namespace CRMApi.Migrations
                     b.HasKey("Id")
                         .HasName("pk_teams");
 
-                    b.HasIndex("DeveloperId")
-                        .HasDatabaseName("ix_teams_developer_id");
-
                     b.HasIndex("TeamLeadId")
                         .HasDatabaseName("ix_teams_team_lead_id");
 
                     b.ToTable("teams", (string)null);
+                });
+
+            modelBuilder.Entity("DeveloperTeam", b =>
+                {
+                    b.Property<string>("DevelopersId")
+                        .HasColumnType("text")
+                        .HasColumnName("developers_id");
+
+                    b.Property<int>("TeamsId")
+                        .HasColumnType("integer")
+                        .HasColumnName("teams_id");
+
+                    b.HasKey("DevelopersId", "TeamsId")
+                        .HasName("pk_developer_team");
+
+                    b.HasIndex("TeamsId")
+                        .HasDatabaseName("ix_developer_team_teams_id");
+
+                    b.ToTable("developer_team", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -410,18 +407,11 @@ namespace CRMApi.Migrations
                     b.HasBaseType("CRMApi.Domain.Models.ApplicationUser");
 
                     b.PrimitiveCollection<List<string>>("Stack")
+                        .IsRequired()
                         .HasColumnType("text[]")
                         .HasColumnName("stack");
 
                     b.HasDiscriminator().HasValue("Developer");
-                });
-
-            modelBuilder.Entity("CRMApi.Domain.Models.ApplicationUser", b =>
-                {
-                    b.HasOne("CRMApi.Domain.Models.Team", null)
-                        .WithMany("Developers")
-                        .HasForeignKey("TeamId")
-                        .HasConstraintName("fk_asp_net_users_teams_team_id");
                 });
 
             modelBuilder.Entity("CRMApi.Domain.Models.Project", b =>
@@ -436,18 +426,30 @@ namespace CRMApi.Migrations
 
             modelBuilder.Entity("CRMApi.Domain.Models.Team", b =>
                 {
-                    b.HasOne("CRMApi.Domain.Models.Developer", null)
-                        .WithMany("Teams")
-                        .HasForeignKey("DeveloperId")
-                        .HasConstraintName("fk_teams_developers_developer_id");
-
-                    b.HasOne("CRMApi.Domain.Models.ApplicationUser", "TeamLead")
+                    b.HasOne("CRMApi.Domain.Models.Developer", "TeamLead")
                         .WithMany()
                         .HasForeignKey("TeamLeadId")
                         .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_teams_users_team_lead_id");
+                        .HasConstraintName("fk_teams_developers_team_lead_id");
 
                     b.Navigation("TeamLead");
+                });
+
+            modelBuilder.Entity("DeveloperTeam", b =>
+                {
+                    b.HasOne("CRMApi.Domain.Models.Developer", null)
+                        .WithMany()
+                        .HasForeignKey("DevelopersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_developer_team_developers_developers_id");
+
+                    b.HasOne("CRMApi.Domain.Models.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_developer_team_teams_teams_id");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -509,14 +511,7 @@ namespace CRMApi.Migrations
 
             modelBuilder.Entity("CRMApi.Domain.Models.Team", b =>
                 {
-                    b.Navigation("Developers");
-
                     b.Navigation("Projects");
-                });
-
-            modelBuilder.Entity("CRMApi.Domain.Models.Developer", b =>
-                {
-                    b.Navigation("Teams");
                 });
 #pragma warning restore 612, 618
         }

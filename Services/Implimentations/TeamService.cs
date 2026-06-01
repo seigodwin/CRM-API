@@ -11,7 +11,6 @@ namespace CRMApi.Services.ModelServices
 {
     public class TeamService(AppDbContext context) : ITeamService
     {
-        private readonly string _blobContainerName = "photos";
         private readonly AppDbContext _context = context;
 
         public async Task<ServiceResponse<object>> AssignDeveloperToTeam(string DeveloperId, int TeamId)
@@ -28,7 +27,7 @@ namespace CRMApi.Services.ModelServices
                 return response;
             }
 
-            var developer = await _context.Users.FirstOrDefaultAsync(d => d.Id == DeveloperId);
+            var developer = await _context.Developers.FirstOrDefaultAsync(d => d.Id == DeveloperId);
 
             if (developer is null)
             {
@@ -37,11 +36,11 @@ namespace CRMApi.Services.ModelServices
                 return response;
             }
 
-            if (team.Developers?.Count is not 0)
+            if (team.Developers.Count is not 0)
             {
                 if (team.Developers.Any(d => d.Id == DeveloperId))
                 {
-                    response.Message = $"Developer with Id {DeveloperId} exists in Team with Id {TeamId} already";
+                    response.Message = $"This developer is already a member of this Team";
                     response.Success = false;
                     return response;
                 }
@@ -130,16 +129,14 @@ namespace CRMApi.Services.ModelServices
                 Title = teamDTO.Title,
                 Description = teamDTO.Description,
                 TeamLeadId = teamDTO.TeamLeadId,
-                TeamLead = await _context.Users.FirstOrDefaultAsync( d => d.Id == teamDTO.TeamLeadId)
+                TeamLead = await _context.Developers.FirstOrDefaultAsync( d => d.Id == teamDTO.TeamLeadId)
             };
 
             try
             {
-    
 
                 await _context.Teams.AddAsync(team);
                 await _context.SaveChangesAsync();
-
 
                 var TeamDTO = new FullTeamDTO
                 {
@@ -160,13 +157,11 @@ namespace CRMApi.Services.ModelServices
                     {
                         Id = d.Id,
                         FirstName = d.FirstName,
-                        SecondName = d.SecondName,
-                        UserName = d.UserName,
+                        SecondName = d.LastName,
+                        UserName = d.UserName!,
                         PhoneNumber = d.PhoneNumber,
-                        Email = d.Email,
+                        Email = d.Email!,
                     }).ToList(),
-
-                    ImageUrl = team.ImageUrl
                 };
 
                 response.Message = "Team created Successfully";
@@ -236,7 +231,6 @@ namespace CRMApi.Services.ModelServices
                 return response; 
         }
 
-
         public async Task<ServiceResponse<object>> DeleteProject(int TeamId, int ProjectId)
         {
             var response = new ServiceResponse<object>();
@@ -278,13 +272,11 @@ namespace CRMApi.Services.ModelServices
                     response.Success = false;
                 }
             }
-
             else
             {
                 response.Message = $"No project has been assigned to this Team";
                 response.Success = false;
             }
-
                 return response;
         }
 
@@ -334,11 +326,7 @@ namespace CRMApi.Services.ModelServices
                 response.Success = false;
                 return response;
             }
-
-            var totalTeams = _context.Teams.Count();
-            var totalPages = (int)Math.Ceiling((decimal)totalTeams / PageSize);
-
-
+ 
             var teamsPerPageDTO = new List<FullTeamDTO>();
             
             foreach(var team in teams)
@@ -348,16 +336,15 @@ namespace CRMApi.Services.ModelServices
                     Id = team.Id,
                     Title = team.Title,
                     Description = team.Description,
-                    ImageUrl = team.ImageUrl,
 
                     Developers = team.Developers?.Select(d => new FullDeveloperDTO
                     {
                         Id = d.Id,
                         FirstName = d.FirstName,
-                        SecondName = d.SecondName,
-                        UserName = d.UserName,
+                        SecondName = d.LastName,
+                        UserName = d.UserName!,
                         PhoneNumber = d.PhoneNumber,
-                        Email = d.Email,
+                        Email = d.Email!,
                     }).ToList(),
 
                     Projects = team.Projects?.Select(p => new FullProjectDTO
@@ -372,10 +359,8 @@ namespace CRMApi.Services.ModelServices
                     TeamLead = team.TeamLead is null ? null : new FullDeveloperDTO
                     {
                         Id = team.TeamLead.Id,
-                        FirstName = team.TeamLead.FirstName,
-                        SecondName = team.TeamLead.SecondName,
-                        UserName = team.TeamLead.UserName,
-                        Email = team.TeamLead.Email,
+                        UserName = team.TeamLead.UserName!,
+                        Email = team.TeamLead.Email!,
                         PhoneNumber = team.TeamLead.PhoneNumber,
                     },
 
@@ -384,8 +369,8 @@ namespace CRMApi.Services.ModelServices
 
             response.Message = "Developers retrieved successfully +" +
                                 $"Current Page: {Page}" +
-                                $"PageSize: {PageSize}" +
-                                $"Total Pages: {totalPages}";
+                                $"PageSize: {PageSize}";
+                                
             response.Data = teamsPerPageDTO;
             return response;
 
@@ -410,7 +395,6 @@ namespace CRMApi.Services.ModelServices
             var teamDTO = new FullTeamDTO
             {
                 Title = team.Title,  
-                ImageUrl = team.ImageUrl,
                 Description = team.Description,
 
                 Projects = team.Projects is null ? null : team.Projects.Select(p => new FullProjectDTO
@@ -425,20 +409,20 @@ namespace CRMApi.Services.ModelServices
                 {
                     Id = d.Id,
                     FirstName = d.FirstName,
-                    SecondName = d.SecondName,
-                    UserName = d.UserName,
+                    SecondName = d.LastName,
+                    UserName = d.UserName!,
                     PhoneNumber = d.PhoneNumber,
-                    Email = d.Email
+                    Email = d.Email!,
                 }).ToList(),
                    
                 TeamLead = team.TeamLead is null ? null : new FullDeveloperDTO
                 {
                     Id = team.TeamLead.Id,
                     FirstName = team.TeamLead.FirstName,
-                    SecondName = team.TeamLead.SecondName,  
-                    UserName = team.TeamLead.UserName,
+                    SecondName = team.TeamLead.LastName,  
+                    UserName = team.TeamLead.UserName!,
                     PhoneNumber = team.TeamLead.PhoneNumber,       
-                    Email = team.TeamLead.Email
+                    Email = team.TeamLead.Email!
                 },
     
             };

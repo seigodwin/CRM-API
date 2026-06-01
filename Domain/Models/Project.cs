@@ -11,7 +11,6 @@
     public class Project
     {
         public int Id { get; set; }
-        public string? ImageUrl { get; set; } 
         public required string Title { get; set; }
         public required string Description { get; set; }
         public required string ClientName { get; set; }

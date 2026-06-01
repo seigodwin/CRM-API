@@ -17,7 +17,7 @@ namespace CRM_API.Domain.DTOs.AuthDtos
         public string? PhoneNumber { get; set; }
         [DataType(DataType.Password)]
         public required string Password { get; set; }
-        public List<String>? Stack { get; set; }
-        public List<string>? Roles {get; set;}
+        public List<String> Stack { get; set; } = new List<string>();
+        public List<string> Roles {get; set;} = new List<string>();
     }
 }

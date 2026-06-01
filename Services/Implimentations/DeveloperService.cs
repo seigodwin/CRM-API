@@ -31,7 +31,7 @@ namespace CRMApi.Services.Services
             var developer = await _employeeManager.FindByIdAsync(id);
             if (developer == null)
             {
-                response.Message = $"Developer with Id {id} not found";
+                response.Message = $"Developer not found";
                 response.Success = false;
                 return response;
             }
@@ -75,40 +75,30 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            int totalDevelopers = developers.Count;
-            var totalPages = (int)Math.Ceiling((decimal)totalDevelopers / pageSize);
-
-            var developersPerPageDTO = new List<FullDeveloperDTO>();
-
-            foreach(var developer in developers)
+           response.Data = developers.Select(d => new FullDeveloperDTO
             {
-                developersPerPageDTO.Add(new FullDeveloperDTO 
+                Id = d.Id,
+                FirstName = d.FirstName,
+                SecondName = d.LastName,
+                UserName = d.UserName!,
+                Email = d.Email!,
+                PhoneNumber = d.PhoneNumber,
+                Stack = d.Stack,
+
+                Teams = d.Teams is null ? null : d.Teams.Select(t => new FullTeamDTO
                 {
-                    Id = developer.Id,
-                    FirstName = developer.FirstName,
-                    SecondName = developer.SecondName,
-                    UserName = developer.UserName,
-                    Email = developer.Email,
-                    PhoneNumber = developer.PhoneNumber,
-                    Stack = developer.Stack,
+                    Id = t.Id,
+                    Title = t.Title,
+                    Description = t.Description,
+                    TeamLeadId = t.TeamLeadId,
+                }).ToList(),
 
-                    Teams = developer.Teams is null ? null : developer.Teams.Select(t => new FullTeamDTO
-                    {
-                        Id = t.Id,
-                        Title = t.Title,
-                        Description = t.Description,
-                        TeamLeadId = t.TeamLeadId,
-                    }).ToList(),
-
-                });
-            }
-            response.Data = developersPerPageDTO;
-            ;
+            }).ToList(); 
 
             response.Message = "Developers retrieved successfully " +
                                 $"Current Page: {page}" +
-                                $" PageSize: {pageSize}" +
-                                $" Total Pages: {totalPages}"; 
+                                $" PageSize: {pageSize}" ;
+                                
 
             return response;     
         }
@@ -121,7 +111,7 @@ namespace CRMApi.Services.Services
 
             if (developer is null)
             {
-                response.Message = $"Developer with id {id} not found!";
+                response.Message = $"Developer not found!";
                 response.Success = false;
                 return response;
             }
@@ -130,9 +120,9 @@ namespace CRMApi.Services.Services
             {
                 Id = developer.Id,
                 FirstName = developer.FirstName,
-                SecondName = developer.SecondName,
-                UserName = developer.UserName,
-                Email = developer.Email,
+                SecondName = developer.LastName,
+                UserName = developer.UserName!,
+                Email = developer.Email!,
                 PhoneNumber = developer.PhoneNumber,
                 Stack = developer.Stack,
 
@@ -169,19 +159,16 @@ namespace CRMApi.Services.Services
             var developerDTO = new PatchDevRequestDTO
             {
                 FirstName = developer.FirstName,
-                SecondName = developer.SecondName,
-                UserName = developer.UserName,  
-                PhoneNumber = developer.PhoneNumber,
-                Email = developer.Email,
+                LastName = developer.LastName,
+                UserName = developer.UserName!,  
+                Email = developer.Email!,
                 Stack = developer.Stack,
             };
 
-
             patchData.ApplyTo(developerDTO);
-            
-
+        
             developer.FirstName = developerDTO.FirstName;
-            developer.SecondName = developerDTO.SecondName;
+            developer.LastName = developerDTO.LastName;
             developer.Email = developerDTO.Email;
             developer.Stack = developerDTO.Stack;
 
@@ -214,7 +201,7 @@ namespace CRMApi.Services.Services
             }
 
             developer.FirstName = developerDTO.FirstName;
-            developer.SecondName = developerDTO.SecondName;
+            developer.LastName = developerDTO.SecondName;
             developer.PhoneNumber = developerDTO.PhoneNumber;
             developer.Email = developerDTO.Email;
             developer.Stack = developerDTO.Stack;

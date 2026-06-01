@@ -5,13 +5,15 @@ namespace CRMApi.Domain.DTOs.DeveloperDTOs
 {
     public class PatchDevRequestDTO
     {
-        public string? FirstName { get; set; }
-        public string? SecondName { get; set; }
-        public string? UserName { get; set; }
+        [MaxLength(50)]
+        public string FirstName { get; set; } = string.Empty;
+        [MaxLength(50)]
+        public string LastName { get; set; } = string.Empty;
+        [MaxLength(50)]
+        public string UserName { get; set; } = string.Empty;
         [EmailAddress]
-        public string? Email { get; set; }
-        [Phone]
-        public string? PhoneNumber { get; set; }
-        public List<String>? Stack { get; set; }
+        public string Email { get; set; } = string.Empty;
+        [DataType(DataType.PhoneNumber)]
+        public List<string> Stack { get; set; } = new List<string>();
     }
 }

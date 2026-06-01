@@ -15,7 +15,6 @@ namespace CRMApi.Services.Services
     public class ProjectService(AppDbContext context) : IProjectService
     {
      
-        private readonly string _blobContainerName = "photos";
         private readonly AppDbContext _context = context;
 
         public async Task<ServiceResponse<FullProjectDTO>> CreateProject(ProjectDTO projectDTO)
@@ -41,7 +40,6 @@ namespace CRMApi.Services.Services
 
             try
             {
-               
                 await _context.Projects.AddAsync(project);
                 await _context.SaveChangesAsync();
 
@@ -64,7 +62,6 @@ namespace CRMApi.Services.Services
                     DateStarted = project.DateStarted,
                     DateUpdated= project.DateUpdated,
                     DateCompleted= project.DateCompleted, 
-                    ImageUrl = project.ImageUrl
                 };
 
                 response.Message = "Project Created successfully";
@@ -181,7 +178,6 @@ namespace CRMApi.Services.Services
                     DateStarted = project.DateStarted,
                     DateUpdated = project.DateUpdated,
                     DateCompleted = project.DateCompleted,
-                    ImageUrl = project.ImageUrl,
                     
                     Team = project.Team is null ? null : new FullTeamDTO 
                     { 
@@ -235,7 +231,6 @@ namespace CRMApi.Services.Services
                 DateStarted = project.DateStarted,
                 DateUpdated = project.DateUpdated,
                 DateCompleted = project.DateCompleted,
-                ImageUrl = project.ImageUrl,
             };
             response.Message = "Project retrieved Successfully";
 

@@ -1,5 +1,4 @@
-﻿using Azure.Identity;
-using CRMApi.Domain.Models;
+﻿using CRMApi.Domain.Models;
 using CRMApi.Utility.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -41,18 +40,15 @@ namespace CRMApi.Utility.Services
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Name, user.UserName)   
+                new Claim(JwtRegisteredClaimNames.Email, user.Email!),
+                new Claim(JwtRegisteredClaimNames.Name, user.UserName!)   
             };
 
             //check and include roles
             var roles = await _userManager.GetRolesAsync(user);
             if (roles is not null)
             {
-                foreach( var role in roles)
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, role));
-                }
+                claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
             }
 
             var tokenDescriptor = new SecurityTokenDescriptor
@@ -66,7 +62,6 @@ namespace CRMApi.Utility.Services
 
             string token = tokenHandler.CreateToken(tokenDescriptor);
             return token;  
-
         }
     }
 }

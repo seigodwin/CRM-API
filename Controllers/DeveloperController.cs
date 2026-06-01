@@ -29,7 +29,7 @@ namespace CRMApi.Controllers
         }
 
         
-        [HttpGet("{id}")]
+        [HttpGet("{id}" , Name = "GetDeveloperById")]
         public async Task<IActionResult> GetDeveloperById(string id)
         {
             var serviceResponse = await _developerService.GetDeveloperById(id);
