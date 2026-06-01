@@ -7,6 +7,8 @@ updates:
       interval: "monthly"         
       day: "monday" 
     open-pull-requests-limit: 5   
+    allow:
+     - dependecy-type: "direct"
 
   # 2. TRACK YOUR CI/CD ACTIONS THEMSELVES (Highly Recommended)
   - package-ecosystem: "github-actions"
