@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CRMApi.Controllers 
 {
-    [Route("api/v1/[controller]")] 
+    [Route("api/v1/team")] 
     [ApiController]
     [Authorize(Roles = "Admin")] 
     public class TeamController(ITeamService teamService) : ControllerBase 

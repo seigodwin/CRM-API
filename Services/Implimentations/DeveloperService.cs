@@ -16,7 +16,6 @@ using System.IO;
 using System.Threading.Tasks;
 
 
-
 namespace CRMApi.Services.Services
 {
     public class DeveloperService(AppDbContext context, UserManager<ApplicationUser> employeeManager, IJwtTokenGenerator tokenGenerator) : IDeveloperService
@@ -25,84 +24,9 @@ namespace CRMApi.Services.Services
         private readonly UserManager<ApplicationUser> _employeeManager = employeeManager;
         private readonly IJwtTokenGenerator _tokenGenerator = tokenGenerator;
         
-        
-        public async Task<ServiceResponse<FullDeveloperDTO>> CreateDeveloper(DevRegistrationRequestDTO developerDTO)
+        public async Task<ServiceResponse<string>> DeleteDeveloperById(string id)
         {
-            var response = new ServiceResponse<FullDeveloperDTO>();
-
-
-            if (developerDTO is null)
-            {
-                response.Message = "Developer data is null";
-                response.Success = false;
-                return response;
-            }
-
-            if (await _employeeManager.FindByEmailAsync(developerDTO.Email) is not null)
-            {
-                response.Message = $"Developer with email: {developerDTO.Email} exists";
-                response.Success = false;
-                return response;
-            }
-
-            if (await _context.Users.FirstOrDefaultAsync(d => d.PhoneNumber == developerDTO.PhoneNumber) is not null)
-            {
-                response.Message = $"Developer with phone number: {developerDTO.PhoneNumber} exists";
-                response.Success = false;
-                return response;
-            }
-
-            var developer = new Developer
-            {
-                FirstName = developerDTO.FirstName,
-                SecondName = developerDTO.SecondName, 
-                PhoneNumber = developerDTO.PhoneNumber,
-                UserName = developerDTO.UserName ?? developerDTO.Email,
-                Email = developerDTO.Email,
-                Stack = developerDTO.Stack,
-            };
-
-            try
-            {
-
-                await _employeeManager.CreateAsync(developer, developerDTO.Password);
-                await _context.SaveChangesAsync();
-
-                const string ROLENAME = "Employee";
-
-                await _employeeManager.AddToRoleAsync(developer, ROLENAME);
-
-                response.Data = new FullDeveloperDTO
-                {
-                    Id = developer.Id,
-                    FirstName = developer.FirstName,
-                    SecondName= developer.SecondName,
-                    UserName = developer.UserName,  
-                    Email = developer.Email,
-                    PhoneNumber = developer.PhoneNumber,
-                    Stack = developer.Stack,
-                };
-                response.Message = "Developer Created Successfully";
-
-            }
-            catch (DbUpdateException dbEx)
-            {
-                response.Message = $"Database error: {dbEx.Message}";
-                response.Success = false;
-            }
-
-            catch (Exception ex)
-            {
-                response.Message = $"An error occured while creating developer : {ex.Message}";
-                response.Success = false;
-            }
-
-            return response;
-        }
-
-        public async Task<ServiceResponse<object>> DeleteDeveloperById(string id)
-        {
-            var response = new ServiceResponse<object>();
+            var response = new ServiceResponse<string>();
              
             var developer = await _employeeManager.FindByIdAsync(id);
             if (developer == null)
@@ -228,61 +152,9 @@ namespace CRMApi.Services.Services
 
         }
 
-        public async Task<ServiceResponse<LoginResponseDTO>> Login(DeveloperLoginRequestDTO model)
+        public async Task<ServiceResponse<string>> PatchDeveloperById(string id, JsonPatchDocument<PatchDevRequestDTO> patchData)
         {
-            var response = new ServiceResponse<LoginResponseDTO>();
-
-            if(model is null)
-            {
-                response.Success = false;
-                response.Message = "Please provide login cridentials to continue";
-                return response;
-            }
-
-            var developer = await _context.Developers.FirstOrDefaultAsync(d => d.Email == model.Email);
-            if (developer is not null && !String.IsNullOrEmpty(model.Password))
-            {
-                bool isValid = await _employeeManager.CheckPasswordAsync(developer, model.Password);
-                if (isValid)
-                {
-
-                    response.Message = "Login successful";
-                    var token = await _tokenGenerator.GenerateTokenAsync(developer);
-                    
-                    response.Data = new LoginResponseDTO
-                        {
-                        User = new LoggedInUserDTO
-                        {
-                            Id = developer.Id,
-                            FirstName = developer.FirstName,
-                            LastName = developer.SecondName,
-                            UserName = developer.UserName,
-                            Email = developer.Email,
-                            PhoneNumber = developer.PhoneNumber,
-                        },
-
-                        Token = token
-                        };
-                    ;
-                }
-                else
-                {
-                    response.Message = "Incorrect Password";
-                    response.Success = false;
-                }
-            }
-            else
-            {
-                response.Message = "Incorrect Login cridentials";
-                response.Success = false;
-            }
-
-            return response;
-        }
-
-        public async Task<ServiceResponse<object>> PatchDeveloperById(string id, JsonPatchDocument<PatchDevRequestDTO> patchData)
-        {
-            var response = new ServiceResponse<object>();
+            var response = new ServiceResponse<string>();
 
             var developer = await _context.Developers.FindAsync(id);
 
@@ -328,9 +200,9 @@ namespace CRMApi.Services.Services
         }
 
 
-        public async Task<ServiceResponse<object>> UpdateDeveloperById(string id, UpdateDevRequestDTO developerDTO)
+        public async Task<ServiceResponse<string>> UpdateDeveloperById(string id, UpdateDevRequestDTO developerDTO)
         {
-            var response = new ServiceResponse<object>();
+            var response = new ServiceResponse<string>();
 
             var developer = await _context.Developers.FindAsync(id);
 
@@ -347,7 +219,6 @@ namespace CRMApi.Services.Services
             developer.Email = developerDTO.Email;
             developer.Stack = developerDTO.Stack;
 
-            
             try
             {
                 await _context.SaveChangesAsync();

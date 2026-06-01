@@ -1,0 +1,18 @@
+
+using System.ComponentModel.DataAnnotations;
+
+namespace CRM_API.Domain.DTOs.AuthDtos
+{
+    public class RegisterDeveloperResponseDto
+    {
+        [Key]
+        public string Id { get; set; } = string.Empty;
+        [MaxLength(50)]
+        public string Username { get; set; } = string.Empty;
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+        public List<string>? Roles {get; set;} = new List<string>();
+        public List<string>? Stack {get; set;}
+        
+    }
+}

@@ -26,6 +26,10 @@ public class Program
         DotNetEnv.Env.Load();
         builder.Configuration.AddEnvironmentVariables();
 
+        // Override ASPNETCORE_ENVIRONMENT to Development after loading .env
+        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+        builder.Environment.EnvironmentName = "Development";
+
         builder.Services.AddOpenApi();
         // Add controllers, JSON, XML
         builder.Services.AddControllers()
@@ -67,13 +71,13 @@ public class Program
         //Configure IOptions for AppSettings
         builder.Services.Configure<AppSettings>(options =>
         {
-            options.JwtSecret = builder.Configuration["JWT_SECRET"]!;
-            options.JwtIssuer = builder.Configuration["JWT_ISSUER"]!;
-            options.JwtAudience = builder.Configuration["JWT_AUDIENCE"]!;
-            options.DefaultSqlDbConnectionString = builder.Configuration["DEFAULT_SQL_DB_CONNECTION_STRING"]!;
-            options.DefaultRedisConnectionString = builder.Configuration["DEFAULT_REDIS_CONNECTION_STRING"]!;
-            options.SendGridApiKey = builder.Configuration["SENDGRID_API_KEY"]!;
-            options.FromEmail = builder.Configuration["EMAIL_FROM"]!;
+            options.JwtSecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
+            options.JwtIssuer = builder.Configuration["JWT_ISSUER"] ?? throw new InvalidOperationException("JWT_ISSUER is not configured.");
+            options.JwtAudience = builder.Configuration["JWT_AUDIENCE"] ?? throw new InvalidOperationException("JWT_AUDIENCE is not configured.");
+            options.DefaultSqlDbConnectionString = builder.Configuration["DEFAULT_SQL_DB_CONNECTION_STRING"] ?? throw new InvalidOperationException("DEFAULT_SQL_DB_CONNECTION_STRING is not configured.");
+            options.DefaultRedisConnectionString = builder.Configuration["DEFAULT_REDIS_CONNECTION_STRING"] ?? throw new InvalidOperationException("DEFAULT_REDIS_CONNECTION_STRING is not configured.");
+            options.SendGridApiKey = builder.Configuration["SENDGRID_API_KEY"] ?? throw new InvalidOperationException("SENDGRID_API_KEY is not configured.");
+            options.FromEmail = builder.Configuration["EMAIL_FROM"] ?? throw new InvalidOperationException("EMAIL_FROM is not configured.");
         });
 
 
@@ -90,7 +94,7 @@ public class Program
         // Register model services
         builder.Services.AddScoped<IDeveloperService, DeveloperService>();
         builder.Services.AddScoped<IProjectService, ProjectService>();
-        builder.Services.AddScoped<IUserService, UserService>();
+        //builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<ITeamService, TeamService>();
 
         // Register utility services
@@ -102,16 +106,13 @@ public class Program
         builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders(); 
-
-
-        //Register Jwt
-        builder.Services.AddAuthorization();
+       
 
         //Production
         try
         {
      
-            var JwtKeySecret = builder.Configuration["JWT_SECRET"]!;
+            var JwtKeySecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
              
             var key = Encoding.UTF8.GetBytes(JwtKeySecret);
 
@@ -130,8 +131,8 @@ public class Program
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer is not configured."),
+                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience is not configured."),
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ClockSkew = TimeSpan.Zero,
 
@@ -145,7 +146,8 @@ public class Program
             Console.WriteLine($"Key Vault error: {ex.Message}");
             throw;
         }
-
+         
+        builder.Services.AddAuthorization();
 
         builder.Services.AddEndpointsApiExplorer();
 
@@ -160,41 +162,41 @@ public class Program
         }
 
         //Seed Roles
-        using (var scope = app.Services.CreateScope())
-        {
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleSeeder>();
-            await roleManager.SeedRolesAsync();
-        }
+        // using (var scope = app.Services.CreateScope())
+        // {
+        //     var roleManager = scope.ServiceProvider.GetRequiredService<RoleSeeder>();
+        //     await roleManager.SeedRolesAsync();
+        // }
 
         //Create First Admin
-        using (var scope = app.Services.CreateScope())
-        {
+        // using (var scope = app.Services.CreateScope())
+        // {
 
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        //     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        //     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-            if (!db.Users.Any())
-            {
+        //     if (!db.Users.Any())
+        //     {
                 
-                var passwordValue = builder.Configuration["ADMIN_PASSWORD"]!;
+        //         var passwordValue = builder.Configuration["ADMIN_PASSWORD"] ?? throw new InvalidOperationException("ADMIN_PASSWORD is not configured.");
 
-                var admin = new ApplicationUser
-                {
-                    FirstName = "Sei",
-                    SecondName = "Godwin",
-                    UserName = "seigodwin",
-                    Email = "seigodwin65@gmail.com",
-                    PhoneNumber = "0540580393"
-                };
+        //         var admin = new ApplicationUser
+        //         {
+        //             FirstName = "Sei",
+        //             SecondName = "Godwin",
+        //             UserName = "seigodwin",
+        //             Email = "seigodwin65@gmail.com",
+        //             PhoneNumber = "0540580393"
+        //         };
 
-                var results = await userManager.CreateAsync(admin,passwordValue);
+        //         var results = await userManager.CreateAsync(admin,passwordValue);
 
-                if (results.Succeeded)
-                {  
-                    await userManager.AddToRoleAsync(admin, "Admin");
-                }  
-            }
-        }
+        //         if (results.Succeeded)
+        //         {  
+        //             await userManager.AddToRoleAsync(admin, "Admin");
+        //         }  
+        //     }
+        // }
 
         // Middleware
 

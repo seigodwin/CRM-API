@@ -12,13 +12,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRMApi.Controllers
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/project")]
     [ApiController]
     //[Authorize(Roles = "Admin,Employee")]
     public class ProjectController(IProjectService projectService) : ControllerBase
     {
         private readonly IProjectService _projectService = projectService;
-
    
         [HttpGet]
         public async Task<IActionResult> GetAllProjects(int page = 1, int pageSize = 10)

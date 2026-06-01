@@ -9,17 +9,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CRMApi.Controllers
 {
-    [Route("api/v1/[controller]")]
+    [Route("api/v1/developer")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
     public class DeveloperController(IDeveloperService developerService) : ControllerBase
     {
         private readonly IDeveloperService _developerService = developerService;
-
-
         
         [HttpGet]
-        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> GetAllDevelopers(int page = 1,  int pageSize = 10)
         {
             var serviceResponse = await _developerService.GetAllDevelopers(page , pageSize);
@@ -34,7 +30,6 @@ namespace CRMApi.Controllers
 
         
         [HttpGet("{id}")]
-        [Authorize(Roles = "Admin,Employee")]
         public async Task<IActionResult> GetDeveloperById(string id)
         {
             var serviceResponse = await _developerService.GetDeveloperById(id);
@@ -60,28 +55,7 @@ namespace CRMApi.Controllers
 
             return NoContent();
         }
-
-
-      
-        [HttpPost]
-        public async Task<IActionResult> CreateDeveloper([FromForm] DevRegistrationRequestDTO developerDTO)
-        {
-            
-           if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var serviceResponse = await _developerService.CreateDeveloper(developerDTO);
-
-            if (!serviceResponse.Success)
-            {
-                return BadRequest(new { serviceResponse.Success, serviceResponse.Message });
-            }
-
-            return CreatedAtAction(nameof(GetDeveloperById), new { id = serviceResponse.Data?.Id }, serviceResponse.Data);
-        }
-
+ 
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDeveloper(string id, UpdateDevRequestDTO UpdatedDeveloperDTO)

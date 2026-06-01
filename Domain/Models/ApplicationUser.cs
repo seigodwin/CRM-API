@@ -5,7 +5,7 @@ namespace CRMApi.Domain.Models
     public class ApplicationUser : IdentityUser                 
     {                                                       
       public required string FirstName { get; set; }        
-      public required string SecondName { get; set; }              
+      public required string LastName { get; set; }              
             
     }
 }
