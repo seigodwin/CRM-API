@@ -2,6 +2,7 @@
 using CRM_API.Domain.DTos.AuthDtos;
 using CRM_API.Domain.DTOs.AuthDtos;
 using CRMApi.DbContexts;
+using CRMApi.Domain.DTOs.AuthDtos;
 using CRMApi.Domain.Models;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
@@ -164,6 +165,35 @@ namespace CRMApi.Services.Services
             return response;
         }
 
+        public async Task<ServiceResponse<string>> CreateRoleAsync(RolesRequestDto model)
+        {
+            var response = new ServiceResponse<string>();
+            if(model is null){
+                response.Success = false;
+                response.Message = "Provide valid data to continue";
+                return response;
+            }
+
+            try
+            {
+                var results = await _roleManager.CreateAsync(new IdentityRole(model.RoleName));
+                if (!results.Succeeded)
+                {
+                    response.Message = string.Join(Environment.NewLine, 
+                    results.Errors.Select(e => e.Description));
+                    response.Success = false;
+                    return response;
+                }
+                response.Message = "Role created successfully";
+            }
+            catch (Exception ex)
+            {
+                response.Success = false;
+                response.Message = $"Failed to create role: {ex.Message}";
+            }
+            return response;
+        }
+
         public async Task<ServiceResponse<string>> ForgotPasswordAsync(ForgotPasswordRequestDto model)
         {
             var response = new ServiceResponse<string>();
@@ -256,6 +286,14 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
+            var userExists = await _userManager.FindByEmailAsync(adminDTO.Email);
+            if(userExists is not null)
+            {
+                response.Success = false;
+                response.Message = "The email provided has an account already";
+                return response;
+            }
+
             var admin = new Admin
             {
                 FirstName = adminDTO.FirstName,
@@ -283,12 +321,29 @@ namespace CRMApi.Services.Services
                     }
 
                     var rolesToAdd = cleanRoles.Except(await _userManager.GetRolesAsync(admin)).ToList();
-                    var rolesResults = await _userManager.AddToRolesAsync(admin,cleanRoles);
+                    
+                    var uncreatedRoles = new List<string>();
+                    foreach (var role in rolesToAdd)
+                    {
+                        if (!await _roleManager.RoleExistsAsync(role))
+                        {
+                            uncreatedRoles.Add(role);
+                        }
+                    }
+
+                    if (uncreatedRoles.Any())
+                    {
+                        response.Message = "User created but the following roles do not exist and were not assigned: " + string.Join(", ", uncreatedRoles);
+                        return response;
+                    }
+
+                    var rolesResults = await _userManager.AddToRolesAsync(admin,rolesToAdd);
 
                     if (!rolesResults.Succeeded)
                     {
                         response.Message = string.Join(Environment.NewLine,
                         rolesResults.Errors.Select(e => e.Description));
+                        response.Success = false;
                         return response;
                     }
 
@@ -314,6 +369,14 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
+            var userExists = await _userManager.FindByEmailAsync(userDTO.Email);
+            if(userExists is not null)
+            {
+                response.Success = false;
+                response.Message = "A user with the provided email already exists";
+                return response;
+            }
+
             var developer = new Developer
             {
                 FirstName = userDTO.FirstName,
@@ -324,11 +387,19 @@ namespace CRMApi.Services.Services
 
             try
             {
-                await _userManager.CreateAsync(developer,userDTO.Password);
+                var userCreated = await _userManager.CreateAsync(developer,userDTO.Password);
                 await _context.SaveChangesAsync();
+                if(!userCreated.Succeeded)
+                {
+                    response.Success = false;
+                    response.Message = string.Join(Environment.NewLine,
+                    userCreated.Errors.Select(e => e.Description));
+                    return response;
+                }
+ 
                 response.Message = "User created successfully";
 
-                if (userDTO.Roles.Any())
+                if (userDTO.Roles?.Any() is true)
                 {
                     var cleanRoles = userDTO.Roles
                     .Where( r => !string.IsNullOrEmpty(r))
@@ -341,7 +412,23 @@ namespace CRMApi.Services.Services
                     }
 
                     var rolesToAdd = cleanRoles.Except(await _userManager.GetRolesAsync(developer)).ToList();
-                    var rolesResults = await _userManager.AddToRolesAsync(developer,cleanRoles);
+                    
+                    var uncreatedRoles = new List<string>();
+                    foreach(var role in rolesToAdd)
+                    {
+                        if(!await _roleManager.RoleExistsAsync(role))
+                        {
+                            uncreatedRoles.Add(role);
+                        }
+                    }
+
+                    if (uncreatedRoles.Any())
+                    {
+                        response.Message = $"User created but the following roles do not exists: {string.Join(Environment.NewLine, uncreatedRoles)}";
+                        return response;
+                    }
+                    
+                    var rolesResults = await _userManager.AddToRolesAsync(developer,rolesToAdd);
 
                     if (!rolesResults.Succeeded)
                     {
@@ -369,6 +456,35 @@ namespace CRMApi.Services.Services
                 response.Message = $"Failed to register new user: {ex.Message}";
             }
             
+            return response;
+        }
+        public async Task<ServiceResponse<string>> RemoveRoleAsync(string id)
+        {
+            var response = new ServiceResponse<string>();
+
+            if(id is null || string.IsNullOrEmpty(id)){
+                response.Success = false;
+                response.Message = "Provide valid data to continue";
+                return response;
+            }
+            try
+            {
+                var results = await _roleManager.DeleteAsync(new IdentityRole(id));
+                if (!results.Succeeded){
+                    response.Message = string.Join(Environment.NewLine, 
+                    results.Errors.Select(e => e.Description));
+                    response.Success = false;
+
+                    return response;
+                }
+                response.Message = "Role deleted successfully";
+            
+            }
+            catch(Exception ex)
+            {
+                response.Success = false;
+                response.Message = $"Failed to delete role: {ex.Message}";
+            }
             return response;
         }
 

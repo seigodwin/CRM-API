@@ -144,23 +144,23 @@ namespace CRMApi.Services.ModelServices
                     Title = team.Title,
                     Description = team.Description,
 
-                    Projects = team.Projects?.Select(p => new FullProjectDTO
+                    Projects = team.Projects.Select(p => new FullProjectDTO
                     {
                         Id = p.Id,
-                        Title = p.Title,
-                        Description = p.Description,
-                        ClientName = p.ClientName,
+                        Title = p.Title ?? string.Empty,
+                        Description = p.Description ?? string.Empty,
+                        ClientName = p.ClientName ?? string.Empty,
 
                     }).ToList(),
 
-                    Developers = team.Developers?.Select(d => new FullDeveloperDTO
+                    Developers = team.Developers.Select(d => new FullDeveloperDTO
                     {
                         Id = d.Id,
                         FirstName = d.FirstName,
                         SecondName = d.LastName,
-                        UserName = d.UserName!,
-                        PhoneNumber = d.PhoneNumber,
-                        Email = d.Email!,
+                        UserName = d.UserName ?? string.Empty,
+                        PhoneNumber = d.PhoneNumber ?? string.Empty,
+                        Email = d.Email ?? string.Empty,
                     }).ToList(),
                 };
 
@@ -337,17 +337,17 @@ namespace CRMApi.Services.ModelServices
                     Title = team.Title,
                     Description = team.Description,
 
-                    Developers = team.Developers?.Select(d => new FullDeveloperDTO
+                    Developers = team.Developers.Count <= 0 ? new List<FullDeveloperDTO>() : team.Developers.Select(d => new FullDeveloperDTO
                     {
                         Id = d.Id,
                         FirstName = d.FirstName,
                         SecondName = d.LastName,
-                        UserName = d.UserName!,
-                        PhoneNumber = d.PhoneNumber,
-                        Email = d.Email!,
+                        UserName = d.UserName ?? string.Empty,
+                        PhoneNumber = d.PhoneNumber ?? string.Empty,
+                        Email = d.Email ?? string.Empty,
                     }).ToList(),
 
-                    Projects = team.Projects?.Select(p => new FullProjectDTO
+                    Projects = team.Projects.Count <= 0 ? new List<FullProjectDTO>() : team.Projects.Select(p => new FullProjectDTO
                     {
                         Id = p.Id,
                         Title = p.Title,
@@ -359,9 +359,9 @@ namespace CRMApi.Services.ModelServices
                     TeamLead = team.TeamLead is null ? null : new FullDeveloperDTO
                     {
                         Id = team.TeamLead.Id,
-                        UserName = team.TeamLead.UserName!,
-                        Email = team.TeamLead.Email!,
-                        PhoneNumber = team.TeamLead.PhoneNumber,
+                        UserName = team.TeamLead.UserName ?? string.Empty,
+                        Email = team.TeamLead.Email ?? string.Empty,
+                        PhoneNumber = team.TeamLead.PhoneNumber ?? string.Empty,
                     },
 
                 });
@@ -397,7 +397,7 @@ namespace CRMApi.Services.ModelServices
                 Title = team.Title,  
                 Description = team.Description,
 
-                Projects = team.Projects is null ? null : team.Projects.Select(p => new FullProjectDTO
+                Projects = team.Projects.Count <= 0 ? new List<FullProjectDTO>() : team.Projects.Select(p => new FullProjectDTO
                 {
                     Id = p.Id,
                     Title = p.Title,
@@ -405,14 +405,14 @@ namespace CRMApi.Services.ModelServices
                     ClientName = p.ClientName
                 }).ToList(),
 
-                Developers = team.Developers is null ? null : team.Developers.Select(d => new FullDeveloperDTO  
+                Developers = team.Developers.Count <= 0 ? new List<FullDeveloperDTO>() : team.Developers.Select(d => new FullDeveloperDTO  
                 {
                     Id = d.Id,
                     FirstName = d.FirstName,
                     SecondName = d.LastName,
-                    UserName = d.UserName!,
-                    PhoneNumber = d.PhoneNumber,
-                    Email = d.Email!,
+                    UserName = d.UserName ?? string.Empty,
+                    PhoneNumber = d.PhoneNumber ?? string.Empty ,
+                    Email = d.Email ?? string.Empty,
                 }).ToList(),
                    
                 TeamLead = team.TeamLead is null ? null : new FullDeveloperDTO
@@ -420,9 +420,9 @@ namespace CRMApi.Services.ModelServices
                     Id = team.TeamLead.Id,
                     FirstName = team.TeamLead.FirstName,
                     SecondName = team.TeamLead.LastName,  
-                    UserName = team.TeamLead.UserName!,
-                    PhoneNumber = team.TeamLead.PhoneNumber,       
-                    Email = team.TeamLead.Email!
+                    UserName = team.TeamLead.UserName ?? string.Empty,
+                    PhoneNumber = team.TeamLead.PhoneNumber ?? string.Empty,       
+                    Email = team.TeamLead.Email ?? string.Empty
                 },
     
             };
@@ -431,7 +431,6 @@ namespace CRMApi.Services.ModelServices
             return response;
         }
 
-
         public async Task<ServiceResponse<object>> PatchTeamById(int id, JsonPatchDocument<TeamDTO> patchData)
         {
             var response = new ServiceResponse<object>();
@@ -439,7 +438,7 @@ namespace CRMApi.Services.ModelServices
 
             if (team is null)
             {
-                response.Message = $"Team with Id: {id} not found!";
+                response.Message = $"Team not found!";
                 response.Success = false;
                 return response;
             }
@@ -467,10 +466,8 @@ namespace CRMApi.Services.ModelServices
             {
                 response.Message = $"A database error occured: {dbEx.Message}";
             }
-
             return response;
         }
-
 
         public async Task<ServiceResponse<object>> UpdateTeamById(int id, TeamDTO teamDTO)
         {

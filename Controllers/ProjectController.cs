@@ -27,7 +27,6 @@ namespace CRMApi.Controllers
             return response.Success ? Ok(response) : NotFound(response);
 
         }
-
         
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProjectById(int id)
@@ -38,7 +37,6 @@ namespace CRMApi.Controllers
 
         }
 
-  
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProjectById(int id)
         {
@@ -50,7 +48,7 @@ namespace CRMApi.Controllers
 
     
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProject(int id, UpdateProjectRequestDTO NewProjectDTO)
+        public async Task<IActionResult> UpdateProject(int id, [FromBody] UpdateProjectRequestDTO NewProjectDTO)
         {
            if (NewProjectDTO is not null && ModelState.IsValid)
            {
@@ -61,7 +59,6 @@ namespace CRMApi.Controllers
 
             return BadRequest(ModelState);
         }
-
        
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchProjectById(int id, JsonPatchDocument<UpdateProjectRequestDTO> patchData)
@@ -78,7 +75,7 @@ namespace CRMApi.Controllers
 
         
         [HttpPost]
-        public async Task<IActionResult> CreateProject([FromForm] ProjectDTO NewProjectDTO)
+        public async Task<IActionResult> CreateProject([FromBody] ProjectDTO NewProjectDTO)
         {
            if (NewProjectDTO is not null && ModelState.IsValid)
             {
@@ -91,8 +88,8 @@ namespace CRMApi.Controllers
 
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpDelete("DeleteTeam/{ProjectId}/{TeamId}")]
+        
+        [HttpDelete("delete-team/{ProjectId}/{TeamId}")]
         public async Task<IActionResult> DeleteTeam(int ProjectId, int TeamId) 
         {
             var response = await _projectService.DeleteTeam(ProjectId, TeamId);

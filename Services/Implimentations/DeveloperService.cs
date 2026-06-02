@@ -56,13 +56,7 @@ namespace CRMApi.Services.Services
         {
             var response = new ServiceResponse<List<FullDeveloperDTO>>();
 
-            var employeeRoleId = await _context.Roles.Where(r => r.Name == "Employee")
-                                                     .Select(r => r.Id)
-                                                     .FirstOrDefaultAsync();
-
             var developers = await _context.Developers.Include(d => d.Teams)
-                                                       .Where(u => _context.UserRoles
-                                                       .Any(ur => ur.UserId == u.Id && ur.RoleId == employeeRoleId))
                                                        .Skip((page - 1) * pageSize) 
                                                        .Take(pageSize) 
                                                        .ToListAsync(); 
@@ -82,7 +76,7 @@ namespace CRMApi.Services.Services
                 SecondName = d.LastName,
                 UserName = d.UserName!,
                 Email = d.Email!,
-                PhoneNumber = d.PhoneNumber,
+                PhoneNumber = d.PhoneNumber ?? string.Empty,
                 Stack = d.Stack,
 
                 Teams = d.Teams is null ? null : d.Teams.Select(t => new FullTeamDTO
@@ -90,7 +84,7 @@ namespace CRMApi.Services.Services
                     Id = t.Id,
                     Title = t.Title,
                     Description = t.Description,
-                    TeamLeadId = t.TeamLeadId,
+                    TeamLeadId = t.TeamLeadId ?? string.Empty,
                 }).ToList(),
 
             }).ToList(); 
@@ -107,7 +101,8 @@ namespace CRMApi.Services.Services
             var response = new ServiceResponse<FullDeveloperDTO>();
 
             var developer = await _context.Developers.Include(d => d.Teams)
-                                                     .FirstOrDefaultAsync(d => d.Id == id);
+                                               .FirstOrDefaultAsync(d => d.Id == id);
+           
 
             if (developer is null)
             {
@@ -123,7 +118,7 @@ namespace CRMApi.Services.Services
                 SecondName = developer.LastName,
                 UserName = developer.UserName!,
                 Email = developer.Email!,
-                PhoneNumber = developer.PhoneNumber,
+                PhoneNumber = developer.PhoneNumber ?? string.Empty,
                 Stack = developer.Stack,
 
                 Teams = developer.Teams is null ? null : developer.Teams.Select(t => new FullTeamDTO
@@ -131,7 +126,7 @@ namespace CRMApi.Services.Services
                     Id = t.Id,
                     Title = t.Title,
                     Description = t.Description,
-                    TeamLeadId = t.TeamLeadId,
+                    TeamLeadId = t.TeamLeadId ?? string.Empty,
                 }).ToList(),
 
             };
@@ -154,7 +149,6 @@ namespace CRMApi.Services.Services
                 response.Success = false;
                 return response;
             }
-
 
             var developerDTO = new PatchDevRequestDTO
             {

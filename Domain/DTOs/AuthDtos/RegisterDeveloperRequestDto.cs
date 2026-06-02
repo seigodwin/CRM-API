@@ -10,7 +10,7 @@ namespace CRM_API.Domain.DTOs.AuthDtos
          [MaxLength(50)]
         public required string LastName { get; set; }
         [MaxLength(50)]
-        public  string? UserName { get; set; }
+        public  string UserName { get; set; } = string.Empty;
         [EmailAddress]
         public required string Email { get; set; }  
         [DataType(DataType.PhoneNumber)]

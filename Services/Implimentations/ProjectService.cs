@@ -56,7 +56,7 @@ namespace CRMApi.Services.Services
                         Id = project.Team.Id,
                         Title = project.Team.Title,
                         Description = project.Team.Description,
-                        TeamLeadId = project.Team.TeamLeadId
+                        TeamLeadId = project.Team.TeamLeadId ?? string.Empty
                     },
 
                     DateStarted = project.DateStarted,
@@ -225,7 +225,7 @@ namespace CRMApi.Services.Services
                     Id = project.Team.Id,
                     Title = project.Team.Title,
                     Description = project.Team.Description,
-                    TeamLeadId = project.Team.TeamLeadId
+                    TeamLeadId = project.Team.TeamLeadId ?? string.Empty
                 },
 
                 DateStarted = project.DateStarted,

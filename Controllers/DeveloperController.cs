@@ -58,7 +58,7 @@ namespace CRMApi.Controllers
  
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDeveloper(string id, UpdateDevRequestDTO UpdatedDeveloperDTO)
+        public async Task<IActionResult> UpdateDeveloper(string id, [FromBody] UpdateDevRequestDTO UpdatedDeveloperDTO)
         {
             if (UpdatedDeveloperDTO is null)
             {
