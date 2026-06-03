@@ -62,7 +62,6 @@ namespace CRMApi.Services.ModelServices
             return response;
         }
          
-        
 
         public async Task<ServiceResponse<object>> AssignProjectToTeam(int ProjectId, int TeamId)
         {
@@ -124,17 +123,26 @@ namespace CRMApi.Services.ModelServices
                 return response;
             }
 
+            var teamLead = await _context.Developers
+                .FirstOrDefaultAsync(d => d.Id == teamDTO.TeamLeadId);
+
+            if (teamLead is null)
+            {
+                response.Success = false;
+                response.Message = "Team lead not found";
+                return response;
+            }
+
             var team = new Team
             {
                 Title = teamDTO.Title,
                 Description = teamDTO.Description,
-                TeamLeadId = teamDTO.TeamLeadId,
-                TeamLead = await _context.Developers.FirstOrDefaultAsync( d => d.Id == teamDTO.TeamLeadId)
+                TeamLeadId = teamLead.Id,
+                TeamLead = teamLead
             };
 
             try
             {
-
                 await _context.Teams.AddAsync(team);
                 await _context.SaveChangesAsync();
 
@@ -143,21 +151,20 @@ namespace CRMApi.Services.ModelServices
                     Id = team.Id,
                     Title = team.Title,
                     Description = team.Description,
+                    TeamLeadId = team.TeamLeadId,
 
                     Projects = team.Projects.Select(p => new FullProjectDTO
                     {
                         Id = p.Id,
-                        Title = p.Title ?? string.Empty,
-                        Description = p.Description ?? string.Empty,
-                        ClientName = p.ClientName ?? string.Empty,
+                        Title = p.Title,
+                        Description = p.Description,
+                        ClientName = p.ClientName,
 
                     }).ToList(),
 
                     Developers = team.Developers.Select(d => new FullDeveloperDTO
                     {
                         Id = d.Id,
-                        FirstName = d.FirstName,
-                        SecondName = d.LastName,
                         UserName = d.UserName ?? string.Empty,
                         PhoneNumber = d.PhoneNumber ?? string.Empty,
                         Email = d.Email ?? string.Empty,
@@ -217,7 +224,7 @@ namespace CRMApi.Services.ModelServices
 
                 else
                 {
-                    response.Message = $"Developer with Id {DeveloperId} is not a member of this Team";
+                    response.Message = $"This developer is not a member of this Team";
                     response.Success = false;
                 }
             }
@@ -288,7 +295,7 @@ namespace CRMApi.Services.ModelServices
 
             if(team is null)
             {
-                response.Message = $"Team with Id: {id} not found!";
+                response.Message = $"Team not found!";
                 response.Success = false;
                 return response;
             }
@@ -387,7 +394,7 @@ namespace CRMApi.Services.ModelServices
 
             if (team is null)
             {
-                response.Message = $"Team with Id: {id} not found!";
+                response.Message = $"Team not found!";
                 response.Success = false;
                 return response;
             }
@@ -476,7 +483,7 @@ namespace CRMApi.Services.ModelServices
 
             if (team is null)
             {
-                response.Message = $"Team with Id: {id} not found!";
+                response.Message = $"Team not found!";
                 response.Success = false;
                 return response;
             }

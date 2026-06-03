@@ -35,8 +35,14 @@ namespace CRMApi.Controllers
             {
                 var response = await _userService.RegisterDeveloperAsync(dto);
 
-                return response.Success ? CreatedAtRoute("GetDeveloperById", new{id = response.Data!.Id},response) 
-                : BadRequest(response); 
+                if (response.Success && response.Data != null)
+                    {
+                        return CreatedAtRoute(
+                            "GetDeveloperById",
+                            new { id = response.Data.Id },
+                            response
+                        );
+                    } 
             }
 
             return BadRequest(ModelState); 

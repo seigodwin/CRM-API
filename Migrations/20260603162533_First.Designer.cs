@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CRMApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260601212520_First")]
+    [Migration("20260603162533_First")]
     partial class First
     {
         /// <inheritdoc />

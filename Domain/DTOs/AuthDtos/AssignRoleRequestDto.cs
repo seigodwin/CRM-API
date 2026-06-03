@@ -7,6 +7,6 @@ namespace CRM_API.Domain.DTOs.AuthDtos
     {
         [EmailAddress]
         public required string Email {get; set;} 
-        public List<string> Roles = new List<string>();
+        public List<string> Roles{get; set;} = new List<string>();
     }
 }

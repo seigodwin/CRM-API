@@ -1,4 +1,6 @@
-﻿using CRMApi.Domain.Models;
+﻿
+using CRMApi.Domain.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +25,7 @@ namespace CRMApi.DbContexts
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
-            // === Team - TeamLead (One-to-Many) === 
+            //  Team - TeamLead (One-to-Many) 
             modelBuilder.Entity<Team>()
                 .HasOne(t => t.TeamLead)
                 .WithMany() // no reverse nav prop

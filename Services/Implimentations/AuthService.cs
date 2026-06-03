@@ -62,12 +62,15 @@ namespace CRMApi.Services.Services
 
                     if (!cleanRoles.Any())
                     {
-                        response.Message = "User created but no valid roles were created to assign";
+                        response.Message = "No valid roles were created to assign";
                         return response;
                     }
 
                     var rolesToAdd = cleanRoles.Except(await _userManager.GetRolesAsync(user)).ToList();
-                    var rolesResults = await _userManager.AddToRolesAsync(user,cleanRoles);
+
+                try
+                {
+                      var rolesResults = await _userManager.AddToRolesAsync(user,cleanRoles);
 
                     if (!rolesResults.Succeeded)
                     {
@@ -78,8 +81,14 @@ namespace CRMApi.Services.Services
                     
                     response.Message = "User created, roles assign successfully";
                 }
-                return response;
-        }
+                catch(Exception ex)
+                {
+                    response.Success = false;
+                    response.Message = $"Failed to assign roles: {ex.Message}";
+                }
+            }
+              return response;
+        }   
 
         public async Task<ServiceResponse<string>> ChangePasswordAsync(ChangePasswordRequestDto model)
         {
@@ -382,13 +391,16 @@ namespace CRMApi.Services.Services
                 FirstName = userDTO.FirstName,
                 LastName = userDTO.LastName,
                 Email = userDTO.Email,
-                UserName = userDTO.UserName ?? userDTO.Email
+                UserName = userDTO.UserName,
+                PhoneNumber = userDTO.PhoneNumber,
+                Stack = userDTO.Stack
             };
 
             try
             {
                 var userCreated = await _userManager.CreateAsync(developer,userDTO.Password);
                 await _context.SaveChangesAsync();
+
                 if(!userCreated.Succeeded)
                 {
                     response.Success = false;
@@ -396,7 +408,18 @@ namespace CRMApi.Services.Services
                     userCreated.Errors.Select(e => e.Description));
                     return response;
                 }
- 
+                
+                response.Data = new RegisterDeveloperResponseDto
+                {
+                    Id = developer.Id,
+                    FirstName = developer.FirstName,
+                    LastName = developer.LastName,
+                    UserName = developer.UserName,
+                    Email = developer.Email,
+                    PhoneNumber = developer.PhoneNumber,
+                    Stack = developer.Stack
+                };
+
                 response.Message = "User created successfully";
 
                 if (userDTO.Roles?.Any() is true)
@@ -437,18 +460,10 @@ namespace CRMApi.Services.Services
                             string.Join(", ", rolesResults.Errors.Select(e => e.Description));
                             return response;
                     }
+                    response.Data.Roles = (await _userManager.GetRolesAsync(developer)).ToList() ?? new List<string>();
                     response.Message = "User created, roles assign successfully";
                 }
 
-                response.Data = new RegisterDeveloperResponseDto
-                {
-                    Id = developer.Id,
-                    FirstName = developer.FirstName,
-                    LastName = developer.LastName,
-                    Email = developer.Email,
-                    Roles = (await _userManager.GetRolesAsync(developer)).ToList(),
-                    Stack = developer.Stack
-                };
             }
             catch(Exception ex)
             {

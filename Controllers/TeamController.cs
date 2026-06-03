@@ -11,11 +11,9 @@ namespace CRMApi.Controllers
 {
     [Route("api/v1/team")] 
     [ApiController]
-    [Authorize(Roles = "Admin")] 
     public class TeamController(ITeamService teamService) : ControllerBase 
     {
         private readonly ITeamService _teamService = teamService; 
-
         
         [HttpPost("assign-developer/{DeveloperId}/{TeamId}")] 
         public async Task<IActionResult> AssignDeveloperToTeam(string DeveloperId, int TeamId) 
@@ -37,7 +35,7 @@ namespace CRMApi.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> CreateTeam([FromForm] TeamDTO teamDTO)
+        public async Task<IActionResult> CreateTeam([FromBody] TeamDTO teamDTO)
         {
             var response = await _teamService.CreateTeam(teamDTO);
 
@@ -73,7 +71,7 @@ namespace CRMApi.Controllers
         }
 
 
-        [Authorize(Roles = "Admin,Employee")]
+        
         [HttpGet]
         public async Task<IActionResult> GetAllTeams(int Page = 1, int PageSize = 10)
         {
@@ -83,7 +81,7 @@ namespace CRMApi.Controllers
         }
 
 
-        [Authorize(Roles = "Admin,Employee")]
+        
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTeamById(int id)
         {

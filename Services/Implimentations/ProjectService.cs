@@ -14,7 +14,6 @@ namespace CRMApi.Services.Services
 {
     public class ProjectService(AppDbContext context) : IProjectService
     {
-     
         private readonly AppDbContext _context = context;
 
         public async Task<ServiceResponse<FullProjectDTO>> CreateProject(ProjectDTO projectDTO)
@@ -86,7 +85,7 @@ namespace CRMApi.Services.Services
 
             if (project is null) 
             {
-                response.Message = $"Project with Id: {id} not found!";
+                response.Message = $"Project not found!";
                 response.Success = false;
                 return response;
             }
@@ -118,7 +117,7 @@ namespace CRMApi.Services.Services
 
             if (project is null)
             {
-                response.Message = $"Project with Id: {projectId} not found!";
+                response.Message = $"Project not found!";
                 response.Success = false;
                 return response;
             }
@@ -207,7 +206,7 @@ namespace CRMApi.Services.Services
 
             if (project is null)
             {
-                response.Message = $"Project with id: {id} not found!";
+                response.Message = $"Project not found!";
                 response.Success = false;
                 return response; 
             }
@@ -225,7 +224,7 @@ namespace CRMApi.Services.Services
                     Id = project.Team.Id,
                     Title = project.Team.Title,
                     Description = project.Team.Description,
-                    TeamLeadId = project.Team.TeamLeadId ?? string.Empty
+                    TeamLeadId = project.Team.TeamLeadId
                 },
 
                 DateStarted = project.DateStarted,
@@ -252,7 +251,7 @@ namespace CRMApi.Services.Services
 
             if (project  is null)
             {
-                response.Message = $"Project with Id: {id} not found";
+                response.Message = $"Project not found";
                 response.Success = false;
                 return response;
             }
@@ -311,7 +310,7 @@ namespace CRMApi.Services.Services
 
             if (project is null)
             {
-                response.Message = $"Project with id: {id} not found!";
+                response.Message = $"Project not found!";
                 response.Success = false;
                 return response;
             }

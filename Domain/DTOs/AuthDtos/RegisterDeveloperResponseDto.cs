@@ -10,11 +10,13 @@ namespace CRM_API.Domain.DTOs.AuthDtos
         [MaxLength(50)]
         public string FirstName {get;set;} = string.Empty;
         public string LastName {get;set;} = string.Empty;
-        public string Username { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
-        public List<string>? Roles {get; set;} = new List<string>();
-        public List<string>? Stack {get; set;}
+        [DataType(DataType.PhoneNumber)]
+        public string PhoneNumber { get; set; } = string.Empty;
+        public List<string> Roles {get; set;} = new List<string>();
+        public List<string> Stack {get; set;} = new List<string>();
         
     }
 }

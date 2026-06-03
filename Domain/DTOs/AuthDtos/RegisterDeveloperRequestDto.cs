@@ -14,10 +14,10 @@ namespace CRM_API.Domain.DTOs.AuthDtos
         [EmailAddress]
         public required string Email { get; set; }  
         [DataType(DataType.PhoneNumber)]
-        public string? PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
         [DataType(DataType.Password)]
         public required string Password { get; set; }
-        public List<String> Stack { get; set; } = new List<string>();
+        public List<string> Stack { get; set; } = new List<string>();
         public List<string> Roles {get; set;} = new List<string>();
     }
 }

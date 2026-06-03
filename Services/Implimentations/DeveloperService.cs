@@ -69,26 +69,39 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-           response.Data = developers.Select(d => new FullDeveloperDTO
+            var developersDTO = developers.Select(d => new FullDeveloperDTO
             {
                 Id = d.Id,
                 FirstName = d.FirstName,
                 SecondName = d.LastName,
-                UserName = d.UserName!,
-                Email = d.Email!,
+                UserName = d.UserName ?? string.Empty,
+                Email = d.Email ?? string.Empty,
                 PhoneNumber = d.PhoneNumber ?? string.Empty,
                 Stack = d.Stack,
+                
+                Roles = _context.UserRoles
+                .Where(ur => ur.UserId == d.Id)
+                .Join(
+                    _context.Roles, 
+                    ur => ur.RoleId, 
+                    r => r.Id, 
+                    (ur, r) => r.Name
+                )// Safely handles the compiler warning if IdentityRole.Name is nullable
+                .Select(roleName => roleName ?? string.Empty) 
+                .ToList(),
+                
 
                 Teams = d.Teams is null ? null : d.Teams.Select(t => new FullTeamDTO
                 {
                     Id = t.Id,
                     Title = t.Title,
                     Description = t.Description,
-                    TeamLeadId = t.TeamLeadId ?? string.Empty,
+                    TeamLeadId = t.TeamLeadId,
                 }).ToList(),
 
             }).ToList(); 
 
+            response.Data   = developersDTO;
             response.Message = "Developers retrieved successfully " +
                                 $"Current Page: {page}" +
                                 $" PageSize: {pageSize}" ;
@@ -116,10 +129,11 @@ namespace CRMApi.Services.Services
                 Id = developer.Id,
                 FirstName = developer.FirstName,
                 SecondName = developer.LastName,
-                UserName = developer.UserName!,
-                Email = developer.Email!,
+                UserName = developer.UserName ?? string.Empty,
+                Email = developer.Email ?? string.Empty,
                 PhoneNumber = developer.PhoneNumber ?? string.Empty,
                 Stack = developer.Stack,
+                Roles = (await _employeeManager.GetRolesAsync(developer)).ToList() ?? new List<string>(),
 
                 Teams = developer.Teams is null ? null : developer.Teams.Select(t => new FullTeamDTO
                 {
@@ -154,8 +168,8 @@ namespace CRMApi.Services.Services
             {
                 FirstName = developer.FirstName,
                 LastName = developer.LastName,
-                UserName = developer.UserName!,  
-                Email = developer.Email!,
+                UserName = developer.UserName ?? string.Empty,
+                Email = developer.Email ?? string.Empty,
                 Stack = developer.Stack,
             };
 
