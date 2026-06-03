@@ -57,21 +57,22 @@ public class Program
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders(); 
 
-        // if (builder.Environment.IsProduction())
-        // {
 
-        //     // //Configure Serilog for logging
-        //     // Log.Logger = new LoggerConfiguration()
-        //     //     .MinimumLevel.Information()
-        //     //     .WriteTo.MSSqlServer(
-        //     //         connectionString: prodConnectionString,
-        //     //         sinkOptions: new Serilog.Sinks.MSSqlServer.MSSqlServerSinkOptions { TableName = "Logs", AutoCreateSqlTable = true }
-        //     //     )
-        //     //     .CreateLogger();
+        //Configure Redis
+        var redisConnectionString = builder.Environment.IsProduction() ?
+        builder.Configuration["PRODUCTION_REDIS_CONNECTION_STRING"] :
+        builder.Configuration["DEFAULT_REDIS_CONNECTION_STRING"];
 
-        //     // builder.Host.UseSerilog();
-        // }
+        if(string.IsNullOrEmpty(redisConnectionString))
+        {
+            throw new InvalidOperationException("Redis connection string is not configured.");
+        }
 
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = redisConnectionString;
+            options.InstanceName = "CRMApi_Cache_";
+        });
 
         //Configure IOptions for AppSettings
         builder.Services.Configure<AppSettings>(options =>
@@ -105,13 +106,13 @@ public class Program
         // Register utility services
         builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         builder.Services.AddSingleton<IEmailService, EmailService>();
+        builder.Services.AddScoped<IRedisCacheService, RedisCacheService>();
         builder.Services.AddTransient<RoleSeeder>();
        
 
         //Production
         try
         {
-     
             var JwtKeySecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
              
             var key = Encoding.UTF8.GetBytes(JwtKeySecret);
@@ -131,8 +132,8 @@ public class Program
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = builder.Configuration["JWT_ISSUER"] ?? throw new InvalidOperationException("Jwt:Issuer is not configured."),
-                    ValidAudience = builder.Configuration["JWT_AUDIENCE"] ?? throw new InvalidOperationException("Jwt:Audience is not configured."),
+                    ValidIssuer = builder.Configuration["JWT_ISSUER"] ?? throw new InvalidOperationException("Jwt Issuer is not configured."),
+                    ValidAudience = builder.Configuration["JWT_AUDIENCE"] ?? throw new InvalidOperationException("Jwt Audience is not configured."),
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ClockSkew = TimeSpan.Zero,
 
@@ -159,7 +160,6 @@ public class Program
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await db.Database.MigrateAsync();
-
         }
 
         //Seed Roles
@@ -203,18 +203,18 @@ public class Program
 
         // Configure the HTTP request pipeline.
 
+
         app.MapOpenApi();    
-         app.MapScalarApiReference( "", options =>
+        app.MapScalarApiReference( "", options =>
          {
              options.Theme = ScalarTheme.BluePlanet;
              options.WithTitle("CRM API Documentation");
          });
          
-
         app.UseHttpsRedirection(); 
         app.UseRouting();
         //app.UseCors("AllowFrontendOnly"); 
-        app.UseAuthentication();
+        app.UseAuthentication(); 
         app.UseAuthorization(); 
         app.MapControllers();
          

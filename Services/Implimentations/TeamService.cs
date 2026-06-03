@@ -9,9 +9,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRMApi.Services.ModelServices
 {
-    public class TeamService(AppDbContext context) : ITeamService
+    public class TeamService(AppDbContext context, IRedisCacheService cache) : ITeamService
     {
         private readonly AppDbContext _context = context;
+        private readonly IRedisCacheService _cache = cache;
 
         public async Task<ServiceResponse<object>> AssignDeveloperToTeam(string DeveloperId, int TeamId)
         {
@@ -275,7 +276,7 @@ namespace CRMApi.Services.ModelServices
 
                 else
                 {
-                    response.Message = $"Project with Id {ProjectId} is not assigned to this Team";
+                    response.Message = $"Project is not assigned to this Team";
                     response.Success = false;
                 }
             }
@@ -320,6 +321,15 @@ namespace CRMApi.Services.ModelServices
         public async Task<ServiceResponse<List<FullTeamDTO>>> GetAllTeams(int Page = 1, int PageSize = 10)
         {
             var response = new ServiceResponse<List<FullTeamDTO>>();
+            var cacheKey = $"teams:page:{Page}:pageSize:{PageSize}";
+            var cachedData = await _cache.GetAsync<List<FullTeamDTO>>(cacheKey);
+
+            if(cachedData != null)
+            {
+                response.Data = cachedData;
+                response.Message = "Teams retrieved successfully from cache.";
+                return response;
+            }
 
             var teams = await _context.Teams.Include(t => t.Developers)
                                             .Include(t => t.Projects)
@@ -379,6 +389,7 @@ namespace CRMApi.Services.ModelServices
                                 $"PageSize: {PageSize}";
                                 
             response.Data = teamsPerPageDTO;
+            await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
             return response;
 
         }
@@ -387,6 +398,17 @@ namespace CRMApi.Services.ModelServices
         public async Task<ServiceResponse<FullTeamDTO>> GetTeamById(int id)
         {
             var response = new ServiceResponse<FullTeamDTO>();
+
+            var cacheKey = $"team:{id}";
+            var cachedData = await _cache.GetAsync<FullTeamDTO>(cacheKey);
+
+            if(cachedData is not null)
+            {
+                response.Data = cachedData;
+                response.Message = "Team retrieved from cache";
+                return response;
+            }
+            
             var team = await _context.Teams.Include(t => t.Projects)
                                            .Include(t => t.Developers)
                                            .Include(T => T.TeamLead)
@@ -435,6 +457,8 @@ namespace CRMApi.Services.ModelServices
             };
                
             response.Message = "Team retrieved successfully";
+            
+            await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
             return response;
         }
 

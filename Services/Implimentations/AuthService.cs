@@ -379,6 +379,7 @@ namespace CRMApi.Services.Services
             }
 
             var userExists = await _userManager.FindByEmailAsync(userDTO.Email);
+            
             if(userExists is not null)
             {
                 response.Success = false;

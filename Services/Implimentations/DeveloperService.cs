@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
@@ -18,9 +19,11 @@ using System.Threading.Tasks;
 
 namespace CRMApi.Services.Services
 {
-    public class DeveloperService(AppDbContext context, UserManager<ApplicationUser> employeeManager, IJwtTokenGenerator tokenGenerator) : IDeveloperService
+    public class DeveloperService(AppDbContext context,
+    IRedisCacheService cache, UserManager<ApplicationUser> employeeManager, IJwtTokenGenerator tokenGenerator) : IDeveloperService
     {
         private readonly AppDbContext _context = context;
+        private readonly IRedisCacheService _cache = cache;
         private readonly UserManager<ApplicationUser> _employeeManager = employeeManager;
         private readonly IJwtTokenGenerator _tokenGenerator = tokenGenerator;
         
@@ -55,6 +58,16 @@ namespace CRMApi.Services.Services
         public async Task<ServiceResponse<List<FullDeveloperDTO>>> GetAllDevelopers(int page = 1, int pageSize = 10)
         {
             var response = new ServiceResponse<List<FullDeveloperDTO>>();
+
+            var cacheKey = $"developers:page:{page}:pageSize:{pageSize}";
+            var cachedData = await _cache.GetAsync<List<FullDeveloperDTO>>(cacheKey);
+
+            if(cachedData != null)
+            {
+                response.Data = cachedData;
+                response.Message = "Developers retrieved successfully from cache.";
+                return response;
+            }
 
             var developers = await _context.Developers.Include(d => d.Teams)
                                                        .Skip((page - 1) * pageSize) 
@@ -105,13 +118,24 @@ namespace CRMApi.Services.Services
             response.Message = "Developers retrieved successfully " +
                                 $"Current Page: {page}" +
                                 $" PageSize: {pageSize}" ;
-                                
+
+            await _cache.SetAsync(cacheKey, developersDTO, TimeSpan.FromMinutes(5));   
 
             return response;     
         }
         public async Task<ServiceResponse<FullDeveloperDTO>> GetDeveloperById(string id)
         {
             var response = new ServiceResponse<FullDeveloperDTO>();
+
+            var cacheKey = $"developer:{id}";
+            var cachedData = await _cache.GetAsync<FullDeveloperDTO>(cacheKey);
+
+            if(cachedData is not null)
+            {
+                response.Message = "Data retrieved from cache";
+                response.Data = cachedData;
+                return response;
+            }
 
             var developer = await _context.Developers.Include(d => d.Teams)
                                                .FirstOrDefaultAsync(d => d.Id == id);
@@ -146,7 +170,7 @@ namespace CRMApi.Services.Services
             };
 
             response.Message = "Developer retrieved Successfully";
-
+            await _cache.SetAsync(cacheKey , response.Data, TimeSpan.FromMinutes(5));
             return response;
 
         }

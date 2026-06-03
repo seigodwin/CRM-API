@@ -85,7 +85,7 @@ namespace CRMApi.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTeamById(int id)
         {
-            var response = await _teamService.DeleteTeamById(id);
+            var response = await _teamService.GetTeamById(id);
 
             return response.Success ? Ok(response) : NotFound(response); 
         }

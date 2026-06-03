@@ -12,9 +12,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRMApi.Services.Services
 {
-    public class ProjectService(AppDbContext context) : IProjectService
+    public class ProjectService(AppDbContext context, IRedisCacheService cache) : IProjectService
     {
         private readonly AppDbContext _context = context;
+        private readonly IRedisCacheService _cache = cache;
 
         public async Task<ServiceResponse<FullProjectDTO>> CreateProject(ProjectDTO projectDTO)
         {
@@ -146,6 +147,15 @@ namespace CRMApi.Services.Services
         {
             var response = new ServiceResponse<List<FullProjectDTO>>();
 
+            var cacheKey = $"projects:page:{page}:pageSize:{pageSize}";
+            var cachedData = await _cache.GetAsync<List<FullProjectDTO>>(cacheKey);
+            if(cachedData != null)
+            {
+                response.Data = cachedData;
+                response.Message = "Projects retrieved successfully from cache.";
+                return response;
+            }
+
             var projectPerPageDTO = new List<FullProjectDTO>();
 
             var projects = await _context.Projects.Include(p => p.Team)
@@ -194,7 +204,7 @@ namespace CRMApi.Services.Services
                                $" Current Page: {page}" +
                                $" Page Size: {pageSize}" +
                                $" Total Pages {totalPages}";
-
+            await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
             return response;
         }
 
@@ -202,6 +212,15 @@ namespace CRMApi.Services.Services
         {
             var response = new ServiceResponse<FullProjectDTO>();
 
+            var cacheKey = $"project:{id}";
+            var cachedData = await _cache.GetAsync<FullProjectDTO>(cacheKey);
+
+            if(cachedData != null)
+            {
+                response.Data = cachedData;
+                response.Message = "Project retrieved successfully from cache.";
+                return response;
+            }
             var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id);
 
             if (project is null)
@@ -232,7 +251,8 @@ namespace CRMApi.Services.Services
                 DateCompleted = project.DateCompleted,
             };
             response.Message = "Project retrieved Successfully";
-
+            
+            await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
             return response;
         }
 
