@@ -71,7 +71,6 @@ namespace CRMApi.Controllers
         }
 
 
-        
         [HttpGet]
         public async Task<IActionResult> GetAllTeams(int Page = 1, int PageSize = 10)
         {
