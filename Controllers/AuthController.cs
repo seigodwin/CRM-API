@@ -12,6 +12,7 @@ using CRMApi.Services.Interfaces;
 using CRMApi.Services.Services;
 using CRM_API.Domain.DTos.AuthDtos;
 using CRMApi.Domain.DTOs.AuthDtos;
+using CRM_API.Domain.DTos;
 
 
 namespace CRMApi.Controllers
@@ -168,6 +169,19 @@ namespace CRMApi.Controllers
             }
 
             return BadRequest();
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshRequestDto request)
+        {
+            if (request is not null && ModelState.IsValid)
+            {
+                var response = await _userService.RefreshTokenAsync(request);
+
+                return response.Success ? Ok(response) : BadRequest(response);
+            }
+
+            return BadRequest(ModelState);
         }
     }
 

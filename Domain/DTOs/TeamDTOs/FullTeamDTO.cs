@@ -1,4 +1,4 @@
-﻿using CRMApi.Domain.Models;
+﻿
 
 namespace CRMApi.Domain.DTOs
 {

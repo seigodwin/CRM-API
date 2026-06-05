@@ -1,4 +1,5 @@
-﻿using CRM_API.Domain.DTos.AuthDtos;
+﻿using CRM_API.Domain.DTos;
+using CRM_API.Domain.DTos.AuthDtos;
 using CRM_API.Domain.DTOs.AuthDtos;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.DTOs.AuthDtos;
@@ -19,5 +20,6 @@ namespace CRMApi.Services.Interfaces
         Task<ServiceResponse<string>> AssignRolesAsync(AssignRoleRequestDto model);
         Task<ServiceResponse<string>> CreateRoleAsync(RolesRequestDto model);
         Task<ServiceResponse<string>> RemoveRoleAsync(string Id);
+        Task<ServiceResponse<AuthenticatedUsertDto>> RefreshTokenAsync(RefreshRequestDto request);
     }
 }

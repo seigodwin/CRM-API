@@ -20,12 +20,12 @@ using System.Threading.Tasks;
 namespace CRMApi.Services.Services
 {
     public class DeveloperService(AppDbContext context,
-    IRedisCacheService cache, UserManager<ApplicationUser> employeeManager, IJwtTokenGenerator tokenGenerator) : IDeveloperService
+    IRedisCacheService cache, UserManager<ApplicationUser> employeeManager) : IDeveloperService
     {
         private readonly AppDbContext _context = context;
         private readonly IRedisCacheService _cache = cache;
         private readonly UserManager<ApplicationUser> _employeeManager = employeeManager;
-        private readonly IJwtTokenGenerator _tokenGenerator = tokenGenerator;
+    
         
         public async Task<ServiceResponse<string>> DeleteDeveloperById(string id)
         {

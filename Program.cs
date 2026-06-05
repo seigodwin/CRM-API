@@ -1,4 +1,5 @@
 ﻿
+using CRM_API.Options;
 using CRMApi.DbContexts;
 using CRMApi.Domain.Models;
 using CRMApi.Services.Interfaces;
@@ -38,7 +39,7 @@ public class Program
         //Add DbContext
         var connectionString = builder.Environment.IsProduction() ?
         builder.Configuration["PRODUCTION_SQL_DB_CONNECTION_STRING"] :
-        builder.Configuration["SUPABASE_CONNECTION_STRING"];
+        builder.Configuration["DEFAULT_POSTGRESQL_DB_CONNECTION_STRING"];
       
 
         if(string.IsNullOrEmpty(connectionString))
@@ -78,15 +79,21 @@ public class Program
         //Configure IOptions for AppSettings
         builder.Services.Configure<AppSettings>(options =>
         {
-            options.JwtSecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
-            options.JwtIssuer = builder.Configuration["JWT_ISSUER"] ?? throw new InvalidOperationException("JWT_ISSUER is not configured.");
-            options.JwtAudience = builder.Configuration["JWT_AUDIENCE"] ?? throw new InvalidOperationException("JWT_AUDIENCE is not configured.");
             options.DefaultSqlDbConnectionString = builder.Configuration["DEFAULT_POSTGRESQL_DB_CONNECTION_STRING"] ?? throw new InvalidOperationException("DEFAULT_POSTGRESQL_DB_CONNECTION_STRING is not configured.");
             options.DefaultRedisConnectionString = builder.Configuration["DEFAULT_REDIS_CONNECTION_STRING"] ?? throw new InvalidOperationException("DEFAULT_REDIS_CONNECTION_STRING is not configured.");
             options.SendGridApiKey = builder.Configuration["SENDGRID_API_KEY"] ?? throw new InvalidOperationException("SENDGRID_API_KEY is not configured.");
             options.FromEmail = builder.Configuration["EMAIL_FROM"] ?? throw new InvalidOperationException("EMAIL_FROM is not configured.");
         });
 
+        //Configure IOptions for JwtOptions
+        builder.Services.Configure<JwtOptions>(options =>
+        {
+            options.Secret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
+            options.Issuer = builder.Configuration["JWT_ISSUER"] ?? throw new InvalidOperationException("JWT_ISSUER is not configured.");
+            options.Audience = builder.Configuration["JWT_AUDIENCE"] ?? throw new InvalidOperationException("JWT_AUDIENCE is not configured.");
+            options.ExpirationMinutes = int.Parse(builder.Configuration["JWT_EXPIRATION_MINUTES"] ?? throw new InvalidOperationException("JWT_EXPIRATION_MINUTES is not configured."));
+        });
+        
 
         // builder.Services.AddCors(options =>
         // {
@@ -105,13 +112,13 @@ public class Program
         builder.Services.AddScoped<ITeamService, TeamService>();
 
         // Register utility services
-        builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddSingleton<IEmailService, EmailService>();
         builder.Services.AddScoped<IRedisCacheService, RedisCacheService>();
         builder.Services.AddTransient<RoleSeeder>();
        
 
-        //Production
+    
         try
         {
             var JwtKeySecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not configured.");

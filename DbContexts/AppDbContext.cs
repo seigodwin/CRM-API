@@ -1,4 +1,5 @@
 ﻿
+using CRM_API.Domain.Models;
 using CRMApi.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -15,6 +16,7 @@ namespace CRMApi.DbContexts
         public DbSet<Developer> Developers { get; set; }
         public DbSet<Admin> Admins { get; set; }
         public DbSet<Team> Teams { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -1,4 +1,5 @@
 ﻿
+using CRM_API.Domain.DTos;
 using CRM_API.Domain.DTos.AuthDtos;
 using CRM_API.Domain.DTOs.AuthDtos;
 using CRMApi.DbContexts;
@@ -24,16 +25,16 @@ namespace CRMApi.Services.Services
         private readonly AppDbContext _context;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IJwtTokenGenerator _jwtTokenGenerator;
+        private readonly ITokenService _tokenService;
 
         public AuthService(AppDbContext context,UserManager<ApplicationUser> userManager, 
         RoleManager<IdentityRole> roleManager,
-        IJwtTokenGenerator jwtTokenGenerator)
+        ITokenService tokenService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
-            _jwtTokenGenerator = jwtTokenGenerator;
+            _tokenService = tokenService;
         }
 
         public async Task<ServiceResponse<string>> AssignRolesAsync(AssignRoleRequestDto model)
@@ -262,12 +263,15 @@ namespace CRMApi.Services.Services
             {
                 try
                 {
-                    var token = await _jwtTokenGenerator.GenerateTokenAsync(user);
+                    var tokens = await _tokenService.GenerateTokenPairAsync(user);
                     response.Message = "Login successful";
                     response.Data = new AuthenticatedUsertDto
                     {
-                        Username = user.UserName!,
-                        Token = token
+                        Id = user.Id,
+                        UserName = user.UserName ?? string.Empty,
+                        AccessToken = tokens.AccessToken,
+                        RefreshToken = tokens.RefreshToken,
+                        AccessTokenExpiration = tokens.AccessTokenExpiration
                     };
                 }
                 catch(Exception ex)
@@ -282,6 +286,29 @@ namespace CRMApi.Services.Services
                 response.Message = "Incorrect email or password";
                 response.Success = false;
             }
+            return response;
+        }
+
+        public async Task<ServiceResponse<AuthenticatedUsertDto>> RefreshTokenAsync(RefreshRequestDto request)
+        {
+            var response = new ServiceResponse<AuthenticatedUsertDto>();
+            if(request is null || string.IsNullOrEmpty(request.AccessToken) || string.IsNullOrEmpty(request.RefreshToken))
+            {
+                response.Success = false;
+                response.Message = "Provide valid data to continue";
+                return response;
+            }
+
+            var result = await _tokenService.RefreshTokenAsync(request);
+
+            if(result is null)
+            {
+                response.Success = false;
+                response.Message = "Invalid token refresh request";
+                return response;
+            }
+            response.Data = result;
+            response.Message = "Token refreshed successfully";
             return response;
         }
 
