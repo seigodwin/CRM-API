@@ -251,10 +251,11 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            var user = await _userManager.FindByIdAsync(loginDto.Email);
+            var user = await _userManager.FindByEmailAsync(loginDto.Email);
+
             if(user is null)
             {
-                response.Message = "Usernot found";
+                response.Message = "User not found";
                 response.Success = false;
                 return response;
             }

@@ -75,7 +75,7 @@ namespace CRMApi.Controllers
                 return response.Success ? Ok(response) : BadRequest(response);
             }
             
-            return BadRequest();
+            return BadRequest(ModelState);
         }
 
 
