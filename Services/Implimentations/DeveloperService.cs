@@ -42,7 +42,8 @@ namespace CRMApi.Services.Services
             try
             {
                 await _employeeManager.DeleteAsync(developer);
-
+                
+                await _cache.RemoveAsync($"developer:{id}");
                 response.Message = "Developer deleted Successfully";
             }
 
@@ -119,7 +120,7 @@ namespace CRMApi.Services.Services
                                 $"Current Page: {page}" +
                                 $" PageSize: {pageSize}" ;
 
-            await _cache.SetAsync(cacheKey, developersDTO, TimeSpan.FromMinutes(5));   
+            await _cache.SetAsync(cacheKey, developersDTO, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));   
 
             return response;     
         }
@@ -170,7 +171,7 @@ namespace CRMApi.Services.Services
             };
 
             response.Message = "Developer retrieved Successfully";
-            await _cache.SetAsync(cacheKey , response.Data, TimeSpan.FromMinutes(5));
+            await _cache.SetAsync(cacheKey , response.Data, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));
             return response;
 
         }
@@ -207,6 +208,8 @@ namespace CRMApi.Services.Services
             try
             {
                 await _context.SaveChangesAsync();
+                await _cache.RemoveAsync($"developer:{id}");
+
                 response.Message = "Developer updated successfully";
             }
             catch (DbUpdateException dbEx)
@@ -241,6 +244,7 @@ namespace CRMApi.Services.Services
             try
             {
                 await _context.SaveChangesAsync();
+                  await _cache.RemoveAsync($"developer:{id}");
                 response.Message = "Developer updated successfully";
             }
 

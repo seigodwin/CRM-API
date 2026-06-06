@@ -38,17 +38,25 @@ namespace CRMApi.Services.Services
              await _cache.RemoveAsync(key);
         }
 
-        public async Task SetAsync<T>(string key, T value, TimeSpan? expiration = null)
+        public async Task SetAsync<T>(string key, T value, 
+        TimeSpan? slidingExpiration = null, TimeSpan? absoluteExpiration = null)
         {
             if (string.IsNullOrEmpty(key) || value is null)
             {
                 return;
             }
 
-            var options = new DistributedCacheEntryOptions
+            var options = new DistributedCacheEntryOptions();
+            if (absoluteExpiration.HasValue)
             {
-                AbsoluteExpirationRelativeToNow = expiration
-            };
+                options.AbsoluteExpirationRelativeToNow = absoluteExpiration;
+            }
+
+            if (slidingExpiration.HasValue)
+            {
+                options.SlidingExpiration = slidingExpiration;
+            }
+         
 
             var jsonData = JsonSerializer.Serialize(value);
             await _cache.SetStringAsync(key, jsonData, options);

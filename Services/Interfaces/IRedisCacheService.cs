@@ -4,7 +4,8 @@ namespace CRMApi.Services.Interfaces
     public interface IRedisCacheService
     {
         Task<T?> GetAsync<T>(string key);
-        Task SetAsync<T>(string key, T value, TimeSpan? expiration = null);
+        Task SetAsync<T>(string key, T value, 
+        TimeSpan? slidingExpiration = null, TimeSpan? absoluteExpiration = null);
         Task RemoveAsync(string key);
     }
 }

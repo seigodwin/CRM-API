@@ -43,6 +43,8 @@ namespace CRMApi.Services.Services
                 await _context.Projects.AddAsync(project);
                 await _context.SaveChangesAsync();
 
+              
+
                 response.Data = new FullProjectDTO
                 {
                     Id = project.Id,
@@ -66,6 +68,8 @@ namespace CRMApi.Services.Services
 
                 response.Message = "Project Created successfully";
 
+               await _cache.SetAsync($"project:{project.Id}", projectDTO,
+               TimeSpan.FromMinutes(5),TimeSpan.FromMinutes(10));
             }
 
             catch (DbUpdateException dbEx)
@@ -96,6 +100,7 @@ namespace CRMApi.Services.Services
                 _context.Projects.Remove(project);
                 await _context.SaveChangesAsync();
 
+                await _cache.RemoveAsync($"project:{id}");
                 response.Message = "Project deleted Successfully";
             }
 
@@ -139,7 +144,7 @@ namespace CRMApi.Services.Services
                     response.Success = false;
                 }
             }
-
+            
             return response;
 
         }
@@ -302,7 +307,8 @@ namespace CRMApi.Services.Services
             try
             {
                await _context.SaveChangesAsync();
-
+               await _cache.RemoveAsync($"project:{id}");
+               
                response.Message = "Project updated successfully!";
             }
 
@@ -348,6 +354,7 @@ namespace CRMApi.Services.Services
             {
 
                 await _context.SaveChangesAsync();
+                await _cache.RemoveAsync($"project:{id}");
 
                 response.Message = "Developer Updated Successfully";
             }
