@@ -5,25 +5,18 @@ using CRMApi.Domain.DTOs.DeveloperDTOs;
 using CRMApi.Domain.Models;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
-using CRMApi.Utility.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
-using Newtonsoft.Json.Linq;
-using System;
-using System.IO;
-using System.Threading.Tasks;
 
 
 namespace CRMApi.Services.Services
 {
     public class DeveloperService(AppDbContext context,
-    IRedisCacheService cache, UserManager<ApplicationUser> employeeManager) : IDeveloperService
+    IDistributedRedisCacheService cache, UserManager<ApplicationUser> employeeManager) : IDeveloperService
     {
         private readonly AppDbContext _context = context;
-        private readonly IRedisCacheService _cache = cache;
+        private readonly IDistributedRedisCacheService _cache = cache;
         private readonly UserManager<ApplicationUser> _employeeManager = employeeManager;
     
         
@@ -42,7 +35,7 @@ namespace CRMApi.Services.Services
             try
             {
                 await _employeeManager.DeleteAsync(developer);
-                
+
                 await _cache.RemoveAsync($"developer:{id}");
                 response.Message = "Developer deleted Successfully";
             }

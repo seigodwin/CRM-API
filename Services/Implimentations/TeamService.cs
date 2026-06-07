@@ -9,10 +9,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRMApi.Services.ModelServices
 {
-    public class TeamService(AppDbContext context, IRedisCacheService cache) : ITeamService
+    public class TeamService(AppDbContext context, IDistributedRedisCacheService cache) : ITeamService
     {
         private readonly AppDbContext _context = context;
-        private readonly IRedisCacheService _cache = cache;
+        private readonly IDistributedRedisCacheService _cache = cache;
 
         public async Task<ServiceResponse<object>> AssignDeveloperToTeam(string DeveloperId, int TeamId)
         {

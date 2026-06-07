@@ -5,17 +5,15 @@ using CRMApi.Domain.DTOs.ProjectDTOs;
 using CRMApi.Domain.Models;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace CRMApi.Services.Services
+namespace CRMApi.Services.Services 
 {
-    public class ProjectService(AppDbContext context, IRedisCacheService cache) : IProjectService
+    public class ProjectService(AppDbContext context, IDistributedRedisCacheService cache) : IProjectService
     {
         private readonly AppDbContext _context = context;
-        private readonly IRedisCacheService _cache = cache;
+        private readonly IDistributedRedisCacheService _cache = cache;
 
         public async Task<ServiceResponse<FullProjectDTO>> CreateProject(ProjectDTO projectDTO)
         {
@@ -308,7 +306,7 @@ namespace CRMApi.Services.Services
             {
                await _context.SaveChangesAsync();
                await _cache.RemoveAsync($"project:{id}");
-               
+
                response.Message = "Project updated successfully!";
             }
 

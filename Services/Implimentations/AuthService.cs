@@ -10,13 +10,8 @@ using CRMApi.Utility;
 using CRMApi.Utility.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Security.Claims;
-using System.Text;
-using static System.Net.WebRequestMethods;
+using StackExchange.Redis;
+
 
 namespace CRMApi.Services.Services
 {
@@ -26,11 +21,13 @@ namespace CRMApi.Services.Services
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITokenService _tokenService;
+        private readonly IRateLimitService _rateLimitService;
 
         public AuthService(AppDbContext context,UserManager<ApplicationUser> userManager, 
-        RoleManager<IdentityRole> roleManager,
+        RoleManager<IdentityRole> roleManager, IRateLimitService rateLimitService,
         ITokenService tokenService)
         {
+            _rateLimitService = rateLimitService;
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
@@ -107,11 +104,24 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
+            
+            var key = $"change-password{model.Email}";
+
+            bool blocked = await _rateLimitService.IsRateLimited(key,3,TimeSpan.FromMinutes(15));
+
+            if (blocked) 
+            {
+                response.Success = false; 
+                response.Message = "Too many attempts. Try again after 15 minutes";
+                return response; 
+            }  
+
             var user = await _userManager.FindByEmailAsync(model.Email);
+
             if(user is null)
             {
                 response.Success = false;
-                response.Message = "User not found";
+                response.Message = "If a user exists, a change password link has been sent";
                 return response;
             }
 
@@ -134,6 +144,7 @@ namespace CRMApi.Services.Services
                 response.Success = false;
                 response.Message = $"Failed to change password: {ex.Message}";
             }
+ 
             return response;
         }
 
@@ -222,6 +233,19 @@ namespace CRMApi.Services.Services
                 response.Message = "A password reset link has been sent to the provided email.";
                 return response;
             }
+
+            
+            var key = $"forgot-password:{model.Email}";
+
+            bool blocked = await _rateLimitService.IsRateLimited(key,3,TimeSpan.FromMinutes(15));
+
+            if (blocked) 
+            {
+                response.Success = false; 
+                response.Message = "Too many attempts. Try again after 15 minutes";
+                return response; 
+            }  
+
             try
             {
                  var token = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -260,7 +284,19 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            if(await _userManager.CheckPasswordAsync(user, loginDto.Password))
+            
+            var key = $"login:{loginDto.Email}";
+
+            bool blocked = await _rateLimitService.IsRateLimited(key,5,TimeSpan.FromMinutes(1));
+
+            if (blocked) 
+            {
+                response.Success = false; 
+                response.Message = "Too many attempts. Try again after a minute";
+                return response; 
+            }  
+           
+           if(await _userManager.CheckPasswordAsync(user, loginDto.Password))
             {
                 try
                 {

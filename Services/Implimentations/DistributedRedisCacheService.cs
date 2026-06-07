@@ -5,10 +5,10 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace CRMApi.Services.Services
 {
-    public class RedisCacheService : IRedisCacheService
+    public class DistributedRedisCacheService : IDistributedRedisCacheService
     {
         private readonly IDistributedCache _cache;
-        public RedisCacheService(IDistributedCache cache)
+        public DistributedRedisCacheService(IDistributedCache cache)
         {
             _cache = cache;
         }
@@ -56,10 +56,8 @@ namespace CRMApi.Services.Services
             {
                 options.SlidingExpiration = slidingExpiration;
             }
-         
 
             var jsonData = JsonSerializer.Serialize(value);
-            await _cache.SetStringAsync(key, jsonData, options);
         }
     }
 }

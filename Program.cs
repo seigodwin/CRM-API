@@ -5,7 +5,6 @@ using CRMApi.Domain.Models;
 using CRMApi.Services.Interfaces;
 using CRMApi.Services.ModelServices;
 using CRMApi.Services.Services;
-using CRMApi.Utility;
 using CRMApi.Utility.Interfaces;
 using CRMApi.Utility.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,7 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
-using Serilog;
+using StackExchange.Redis;
 using System.Security.Claims;
 using System.Text;
 
@@ -70,11 +69,17 @@ public class Program
             throw new InvalidOperationException("Redis connection string is not configured.");
         }
 
+        //Idistributed cache
         builder.Services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = redisConnectionString;
-            options.InstanceName = "CRMApi_Cache_";
+            options.InstanceName = "crm:api:";
         });
+
+        //IDatabase
+        builder.Services.AddSingleton<IConnectionMultiplexer>(
+           ConnectionMultiplexer.Connect(redisConnectionString)
+        ); 
 
         //Configure IOptions for AppSettings
         builder.Services.Configure<AppSettings>(options =>
@@ -114,11 +119,11 @@ public class Program
         // Register utility services
         builder.Services.AddScoped<ITokenService, TokenService>();
         builder.Services.AddSingleton<IEmailService, EmailService>();
-        builder.Services.AddScoped<IRedisCacheService, RedisCacheService>();
+        builder.Services.AddScoped<IDistributedRedisCacheService, DistributedRedisCacheService>();
+        builder.Services.AddScoped<IRateLimitService, RateLimitService>();
         builder.Services.AddTransient<RoleSeeder>();
        
 
-    
         try
         {
             var JwtKeySecret = builder.Configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
