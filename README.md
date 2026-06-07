@@ -1,4 +1,4 @@
-
+[![CI/CD Pipeline](https://github.com/seigodwin/crm-api/actions/workflows/main.yml/badge.svg)](https://github.com/seigodwin/crm-api/actions/workflows/main.yml)
 
 # Scalable .NET 10 CRM API
 
