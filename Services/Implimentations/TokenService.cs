@@ -1,5 +1,4 @@
 ﻿using CRM_API.Domain.DTos;
-using CRM_API.Domain.Models;
 using CRMApi.DbContexts;
 using CRMApi.Domain.Models;
 using CRMApi.Utility.Interfaces;
@@ -7,14 +6,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 using CRM_API.Domain.DTOs.AuthDtos;
 using CRM_API.Options;
+using StackExchange.Redis;
+using System.Security;
 
 
 namespace CRMApi.Utility.Services
@@ -25,10 +23,11 @@ namespace CRMApi.Utility.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly AppDbContext _context;
         private readonly JwtOptions _jwtOptions;
+        private readonly IDatabase _cache;
         public TokenService( IConfiguration config, UserManager<ApplicationUser> userManager
-        , IOptions<AppSettings> appSettings, AppDbContext context, IOptions<JwtOptions> jwtOptions)
+        , IOptions<AppSettings> appSettings, IConnectionMultiplexer redis, AppDbContext context, IOptions<JwtOptions> jwtOptions)
         {
-    
+            _cache = redis.GetDatabase();
             _userManager = userManager;
             _context = context;
             _jwtOptions = jwtOptions.Value;
@@ -70,26 +69,19 @@ namespace CRMApi.Utility.Services
 
             string accessToken = tokenHandler.CreateToken(tokenDescriptor);
 
-            // --- 2. GENERATE REFRESH TOKEN (The missing piece!) ---
+            //  2. GENERATE REFRESH TOKEN 
                 var randomBytes = new byte[64];
-                using var rng = RandomNumberGenerator.Create();
+                using var rng = RandomNumberGenerator.Create(); 
                 rng.GetBytes(randomBytes);
                 var refreshTokenValue = Convert.ToBase64String(randomBytes);
 
-                // 3. Save to datbse
-                var refreshToken = new RefreshToken
-                {
-                    JwtId = JwtId,
-                    UserId = user.Id,
-                    Token = refreshTokenValue,
-                    AddedDate = DateTime.UtcNow,
-                    ExpiryDate = DateTime.UtcNow.AddDays(7),
-                    IsUsed = false,
-                    IsRevoked = false
-                };
+                var redisKey = $"refresh:{user.Id}";
 
-            await _context.RefreshTokens.AddAsync(refreshToken);
-            await _context.SaveChangesAsync();
+                await _cache.StringSetAsync(
+                    redisKey,
+                    refreshTokenValue,
+                    TimeSpan.FromDays(7)
+                );
 
             // --- 4. RETURN THE PAIR ---
             
@@ -127,43 +119,38 @@ namespace CRMApi.Utility.Services
 
             var validatedToken = await tokenHandler.ValidateTokenAsync(request.AccessToken, tokenValidationParameters);
 
-            if (!validatedToken.IsValid || validatedToken.SecurityToken is not JsonWebToken jwtToken)
+            if (validatedToken.SecurityToken is not JsonWebToken jwtToken)
             {
                 throw new SecurityTokenException("Invalid access token.");
             }
 
-            string jwtId = validatedToken.SecurityToken.Id;
+            var userId = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
 
             // 1. Find the refresh token in the database
-            var storedToken = await _context.RefreshTokens.FirstOrDefaultAsync(u => u.Token == request.RefreshToken);
+            var key = $"refresh:{userId}";
+            var storedToken = await _cache.StringGetAsync(key);
             
-            if(storedToken is null)
+            if(storedToken.IsNullOrEmpty)
             {
                 throw new SecurityTokenException("Refresh token does not exist.");
             }
 
-            if(storedToken.JwtId != jwtId)
+            if(storedToken != request.RefreshToken)
             {
-                throw new SecurityTokenException("Jwt ID mismatch.");
-            }
-            
-            // 2. Validate everything
-            if (storedToken.IsUsed || storedToken.IsRevoked || storedToken.ExpiryDate < DateTime.UtcNow)
-            {
-                throw new SecurityTokenException("Invalid refresh token.");
+                throw new SecurityException("Refresh token mismatch");
             }
 
-            // 3. Get the user
-            var user = await _userManager.FindByIdAsync(storedToken.UserId);
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new SecurityException("User not found");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+
             if (user is null)
             {
                 throw new SecurityTokenException("User no longer exists.");
             }
-
-            // 4. Token Rotation: Kill the old refresh token!
-            storedToken.IsUsed = true;
-            _context.RefreshTokens.Update(storedToken);
-            await _context.SaveChangesAsync();
 
             // 5. Generate a brand new pair and return them
             return await GenerateTokenPairAsync(user);
