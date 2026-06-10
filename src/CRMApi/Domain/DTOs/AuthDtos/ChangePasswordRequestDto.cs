@@ -7,7 +7,6 @@ namespace CRM_API.Domain.DTOs.AuthDtos
     {
         [EmailAddress]
         public required string Email { get; set; }
-        public required string Token { get; set; }
         [DataType(DataType.Password)]
         public required string  CurrentPassword { get; set; } 
         [DataType(DataType.Password)]

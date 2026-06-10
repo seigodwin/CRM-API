@@ -169,11 +169,11 @@ public class Program
         var app = builder.Build();
 
         //Run migrations at startup 
-        using (var scope = app.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await db.Database.MigrateAsync();
-        }
+        //using (var scope = app.Services.CreateScope())
+        //{
+        //    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        //    await db.Database.MigrateAsync();
+        //}
 
         //Seed Roles
         // using (var scope = app.Services.CreateScope())

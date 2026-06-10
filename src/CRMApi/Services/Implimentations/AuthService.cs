@@ -40,7 +40,7 @@ namespace CRMApi.Services.Services
             if(model is null)
             {
                 response.Success = false;
-                response.Message = "Provide valid roles to continue";
+                response.Message = "Provide valid data to continue";
                 return response;
             }
 
@@ -60,6 +60,7 @@ namespace CRMApi.Services.Services
 
                     if (!cleanRoles.Any())
                     {
+                        response.Success = false;
                         response.Message = "No valid roles were created to assign";
                         return response;
                     }
@@ -72,12 +73,13 @@ namespace CRMApi.Services.Services
 
                     if (!rolesResults.Succeeded)
                     {
+                        response.Success = false;
                         response.Message = string.Join(Environment.NewLine,
                         rolesResults.Errors.Select(e => e.Description));
                         return response;
                     }
                     
-                    response.Message = "User created, roles assign successfully";
+                    response.Message = "Roles assign successfully";
                 }
                 catch(Exception ex)
                 {
@@ -129,6 +131,7 @@ namespace CRMApi.Services.Services
             {
                 var results = await _userManager
                 .ChangePasswordAsync(user,model.CurrentPassword,model.NewPassword);
+
                 if (!results.Succeeded)
                 {
                     response.Message = string.Join(Environment.NewLine,

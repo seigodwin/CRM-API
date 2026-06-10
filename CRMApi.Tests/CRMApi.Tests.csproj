@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ✅ REQUIRED TEST SDK (FIXED VERSION) -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+
+    <!-- ✅ xUnit -->
+    <PackageReference Include="xunit" Version="2.9.3" />
+
+    <!-- ⚠️ IMPORTANT: downgrade for CI stability -->
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- Code coverage -->
+    <PackageReference Include="coverlet.collector" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <!-- Assertions -->
+    <PackageReference Include="FluentAssertions" Version="8.10.0" />
+
+    <!-- EF InMemory (make sure this matches your main project version) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.9" />
+
+    <!-- Mocking -->
+    <PackageReference Include="Moq" Version="4.20.72" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Project under test -->
+    <ProjectReference Include="..\src\CRMApi\CRMApi.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
