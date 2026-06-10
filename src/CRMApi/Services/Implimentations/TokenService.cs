@@ -21,17 +21,14 @@ namespace CRMApi.Utility.Services
     {
        
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly AppDbContext _context;
         private readonly JwtOptions _jwtOptions;
         private readonly IDatabase _cache;
-        public TokenService( IConfiguration config, UserManager<ApplicationUser> userManager
-        , IOptions<AppSettings> appSettings, IConnectionMultiplexer redis, AppDbContext context, IOptions<JwtOptions> jwtOptions)
+        public TokenService(UserManager<ApplicationUser> userManager
+        , IConnectionMultiplexer redis, IOptions<JwtOptions> jwtOptions) 
         {
             _cache = redis.GetDatabase();
             _userManager = userManager;
-            _context = context;
-            _jwtOptions = jwtOptions.Value;
-
+            _jwtOptions = jwtOptions.Value; 
         }
 
         public async Task<AuthenticatedUsertDto> GenerateTokenPairAsync(ApplicationUser user)

@@ -1,27 +1,30 @@
 name: CI/CD Pipeline
 
-# 1. THE TRIGGER
 on:
   push:
+    
+
+  pull_request:
     branches: [ main ]
 
 jobs:
-  # 2. THE BUILD & TEST JOB
   build-and-test:
-    runs-on: ubuntu-latest # THE ENVIRONMENT
-    
+    runs-on: ubuntu-latest
+
     steps:
     - name: Checkout Source Code
       uses: actions/checkout@v4
 
-    - name: Setup SDK/Runtime
-      uses: actions/setup-dotnet@v5 # (Or setup-node, setup-python, etc.)
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: '10.0'
+        dotnet-version: '10.0.x'
 
     - name: Restore Dependencies
       run: dotnet restore
 
-    - name: Run Tests
-      run: dotnet test --no-restore
+    - name: Build Solution
+      run: dotnet build --no-restore --configuration Release
 
+    - name: Run Tests
+      run: dotnet test --no-build --verbosity normal

@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="CRMApi.Tests/CRMApi.Tests.csproj" Id="9fe66a88-103b-4c5d-bf5e-9e3764864588" />
     <Project Path="src/CRMApi/CRMApi.csproj" />
   </Folder>
 </Solution>
