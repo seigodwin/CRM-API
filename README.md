@@ -1,6 +1,6 @@
-[![CI/CD Pipeline](https://github.com/seigodwin/crm-api/actions/workflows/main.yml/badge.svg)](https://github.com/seigodwin/crm-api/actions/workflows/main.yml)
-
 # Scalable .NET 10 CRM API
+
+[![CI/CD Pipeline](https://github.com/seigodwin/crm-api/actions/workflows/main.yml/badge.svg)](https://github.com/seigodwin/crm-api/actions/workflows/main.yml)
 
 ## About
 
@@ -15,6 +15,7 @@ This project is a scalable CRM API built with .NET 10, featuring secure authenti
 * Redis distributed caching for high-performance data access
 * Refresh token storage with secure rotation strategy
 * Rate limiting for authentication and sensitive endpoints
+* **Robust Automated Testing Suite:** Comprehensive unit testing isolated via mocking to ensure codebase reliability.
 * Structured logging and centralized error handling
 * Clean architecture principles (separation of concerns)
 * RESTful API design
@@ -23,13 +24,21 @@ This project is a scalable CRM API built with .NET 10, featuring secure authenti
 
 ## Tech Stack
 
+### Backend & Core
 * .NET 10 Web API
 * Entity Framework Core
 * PostgreSQL via Supabase and localhost
 * Redis (distributed caching & rate limiting)
-* JWT (System.IdentityModel.Tokens.Jwt)
+* JWT (`System.IdentityModel.Tokens.Jwt`)
+
+### Testing Suite
+* **xUnit:** Core test framework for structuring and executing unit tests.
+* **FluentAssertions:** Natural-language, highly readable assertion engine.
+* **Moq:** Dependency mocking framework utilized to isolate business logic during testing.
+
+### DevOps & Cloud
 * Docker (optional deployment support)
-* CI/CD pipelines (GitHub Actions or similar)
+* CI/CD pipelines (GitHub Actions automated build & test execution)
 * Cloud hosting via Render
 
 ---
@@ -41,8 +50,9 @@ The system follows a layered architecture:
 * Controllers: Handle HTTP requests
 * Services: Business logic layer
 * Data Access Layer: Entity Framework Core
-* Cache Layer: Redis via IDistributedCache / StackExchange.Redis
+* Cache Layer: Redis via `IDistributedCache` / `StackExchange.Redis`
 * Authentication Layer: JWT + Refresh Token system
+* **Testing Layer:** Isolated test projects mirroring the application structure to validate services and utilities independently.
 
 ---
 
@@ -95,8 +105,8 @@ Each request is tracked using a time-based counter stored in Redis with automati
 
 The project includes automated deployment workflows:
 
-* Build and test on every push
-* Automatic deployment to Render
+* **Automated QA:** Runs `dotnet test` on every push and pull request to ensure zero regressions before deployment.
+* Automatic deployment to Render upon successful test runs.
 * Environment-based configuration handling
 * Secure handling of secrets via CI/CD variables
 
@@ -113,13 +123,14 @@ The project includes automated deployment workflows:
 
 ## Project Structure
 
-* Controllers: API endpoints
-* Services: Business logic implementation
-* Models: Data transfer objects and entities
-* Data: DbContext and EF Core configuration
-* Caching: Redis services and helpers
-* Auth: JWT and refresh token logic
-* Middleware: Exception handling and rate limiting
+* `Controllers/`: API endpoints
+* `Services/`: Business logic implementation
+* `Models/`: Data transfer objects and entities
+* `Data/`: DbContext and EF Core configuration
+* `Caching/`: Redis services and helpers
+* `Auth/`: JWT and refresh token logic
+* `Middleware/`: Exception handling and rate limiting
+* **`CRMApi.Tests/`:** Unit tests utilizing xUnit, FluentAssertions, and Moq to validate business logic in isolation.
 
 ---
 
@@ -144,55 +155,10 @@ Update `.env` copy .env variables from `.env.example`:
 
 ---
 
-### Run Locally
+### Run Locally & Testing
 
+#### Running the Application
 ```bash
 dotnet restore
 dotnet build
-dotnet watch or dotnet run
-```
-
----
-
-### Database Migration
-
-```bash
-dotnet ef database update
-```
-
----
-
-## API Endpoints Overview
-
-* Auth
-
-  * POST /api/auth/login
-  * POST /api/auth/register
-  * POST /api/auth/refresh-token
-
-* Users
-
-  * GET /api/users
-  * GET /api/users/{id}
-  * PUT /api/users/{id}
-
-* Admin
-
-  * Role-protected management endpoints
-
----
-
-## Future Improvements
-
-* Event-driven architecture using message queues
-* Full Redis-based session management
-* Microservices decomposition
-* API gateway integration
-* Advanced audit logging system
-* Multi-factor authentication (MFA)
-
----
-
-## License
-
-This project is intended for educational and production learning purposes.
+dotnet watch # or dotnet run
