@@ -36,9 +36,11 @@ public class Program
             .AddXmlDataContractSerializerFormatters();
 
         //Add DbContext
-        var connectionString = builder.Environment.IsProduction() ?
-        builder.Configuration["PRODUCTION_SQL_DB_CONNECTION_STRING"] :
-        builder.Configuration["DEFAULT_POSTGRESQL_DB_CONNECTION_STRING"];
+        // var connectionString = builder.Environment.IsProduction() ?
+        // builder.Configuration["SUPABASE_CONNECTION_STRING"] :
+        // builder.Configuration["DEFAULT_POSTGRESQL_DB_CONNECTION_STRING"];
+
+         var connectionString = builder.Configuration["SUPABASE_CONNECTION_STRING"];
       
 
         if(string.IsNullOrEmpty(connectionString))
