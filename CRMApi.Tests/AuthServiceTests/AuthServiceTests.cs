@@ -1,5 +1,6 @@
 ﻿using CRM_API.Domain.DTOs.AuthDtos;
 using CRMApi.DbContexts;
+using CRMApi.Domain.DTOs;
 using CRMApi.Domain.Models;
 using CRMApi.Services.Interfaces;
 using CRMApi.Services.Services;
@@ -8,6 +9,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using SendGrid;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -30,6 +32,7 @@ namespace CRMApi.Tests.AuthServiceTests
             _rateLimitServiceMock = new Mock<IRateLimitService>();
             _tokenServiceMock = new Mock<ITokenService>();
             _context = CreateDbContext();
+          
 
             _user = new ApplicationUser
             {
@@ -211,16 +214,101 @@ namespace CRMApi.Tests.AuthServiceTests
                 Token = "ConfirmEmailToken"
             };
 
+            _userManagerMock.Setup( um => um.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(_user);
+            _userManagerMock.Setup(um => um.ConfirmEmailAsync(It.IsAny<ApplicationUser>(),It.IsAny<string>()))
+                                            .ReturnsAsync(IdentityResult.Success);
+
             //Act
-            var results = await _sut.ConfirmEmailAsync(dto);
+            var results = await _sut.ConfirmEmailAsync(dto); 
 
             //Assert
-            results.Success.Should().BeFalse();
+            results.Success.Should().BeTrue();
             results.Data.Should().BeNullOrEmpty();
         }
 
-        
+        [Fact]
+        public async Task LoginAsync_WithValidData_ReturnsSuccess()
+        {
+            //Arange
+            var dto = new LoginRequestDto
+            {
+                Email = _user.Email ?? string.Empty,
+                Password = "testpassword"
+            };
 
+            var authenticatedUserDto = new AuthenticatedUsertDto
+            {
+                Id = "testUserId",
+                UserName = "seigodwin",
+                RefreshToken = "testrefreshtoken",
+                AccessToken = "testaccecctoken",
+                AccessTokenExpiration = DateTime.Now
+            };
+
+            _userManagerMock.Setup(um => um.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(_user);
+            _userManagerMock.Setup(um => um.CheckPasswordAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
+                                        .ReturnsAsync(true);
+            _tokenServiceMock.Setup(ts => ts.GenerateTokenPairAsync(It.IsAny<ApplicationUser>()))
+                                                            .ReturnsAsync(authenticatedUserDto);
+
+            //Act
+            var results = await _sut.LoginAsync(dto);
+
+            //Assert
+            results.Success.Should().BeTrue();
+            results.Data.Should().NotBeNull();
+            results.Data.AccessToken.Should().NotBeNullOrWhiteSpace();
+            results.Data.RefreshToken.Should().NotBeNullOrWhiteSpace();
+            
+        }
+
+
+        [Fact]
+        public async Task LoginAsync_WithIncorrectEmail_ReturnsFalse()
+        {
+            //Arange
+            var dto = new LoginRequestDto
+            {
+                Email = _user.Email ?? string.Empty,
+                Password = "testpassword"
+            };
+
+       
+
+            _userManagerMock.Setup(um => um.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
+            
+            //Act
+            var results = await _sut.LoginAsync(dto);
+
+            //Assert
+            results.Success.Should().BeFalse();
+            results.Data.Should().BeNull();
+        }
+
+
+        [Fact]
+        public async Task LoginAsync_WithIncorrectPassword_ReturnsFalse()
+        {
+            //Arange
+            var dto = new LoginRequestDto
+            {
+                Email = _user.Email ?? string.Empty,
+                Password = "testpassword"
+            };
+
+
+            _userManagerMock.Setup(um => um.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(_user);
+            _userManagerMock.Setup(um => um.CheckPasswordAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
+                                                                                            .ReturnsAsync(false);
+
+            //Act
+            var results = await _sut.LoginAsync(dto);
+
+            //Assert
+            results.Success.Should().BeFalse();
+            results.Data.Should().BeNull();
+            
+        }
 
 
 
