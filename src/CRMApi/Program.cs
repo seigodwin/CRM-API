@@ -25,10 +25,6 @@ public class Program
         DotNetEnv.Env.Load();
         builder.Configuration.AddEnvironmentVariables();
 
-        // Override ASPNETCORE_ENVIRONMENT to Development after loading .env
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
-        builder.Environment.EnvironmentName = "Development";
-
         builder.Services.AddOpenApi();
         // Add controllers, JSON, XML
         builder.Services.AddControllers()
