@@ -163,12 +163,30 @@ public class Program
         var app = builder.Build();
 
 
-        app.MapOpenApi();    
-        app.MapScalarApiReference( "", options =>
+        app.MapOpenApi();
+
+        if (builder.Environment.IsProduction())
+        {
+            app.MapScalarApiReference("", options =>
+            {
+                options.Theme = ScalarTheme.BluePlanet;
+                options.WithTitle("CRM API Documentation");
+
+                options.Servers = new[]
+                {
+                    new ScalarServer("https://crm-api-47oi.onrender.com")
+                };
+            });
+        }
+
+        else
+        {
+            app.MapScalarApiReference( "", options =>
          {
              options.Theme = ScalarTheme.BluePlanet;
              options.WithTitle("CRM API Documentation");
          });
+        }
          
         app.UseHttpsRedirection(); 
         app.UseRouting();
