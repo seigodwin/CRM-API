@@ -31,6 +31,17 @@ public class Program
             .AddNewtonsoftJson()
             .AddXmlDataContractSerializerFormatters();
 
+        //CORS
+        builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
+
         //Add DbContext
         var connectionString = builder.Environment.IsProduction() ?
         builder.Configuration["SUPABASE_CONNECTION_STRING"] :
@@ -161,6 +172,7 @@ public class Program
          
         app.UseHttpsRedirection(); 
         app.UseRouting();
+        app.UseCors("AllowAll");
         app.UseAuthentication(); 
         app.UseAuthorization(); 
         app.MapControllers();
