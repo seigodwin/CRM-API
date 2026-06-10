@@ -174,6 +174,7 @@ namespace CRMApi.Services.Services
                 var results = await _userManager.ConfirmEmailAsync(user,model.Token);
                 if (!results.Succeeded)
                 {
+                    response.Success = false;
                     response.Message = string.Join(Environment.NewLine,
                     results.Errors.Select( e => e.Description));
                     return response;

@@ -37,6 +37,7 @@ namespace CRMApi.Services.Services
                 await _employeeManager.DeleteAsync(developer);
 
                 await _cache.RemoveAsync($"developer:{id}");
+
                 response.Message = "Developer deleted Successfully";
             }
 
@@ -54,6 +55,7 @@ namespace CRMApi.Services.Services
             var response = new ServiceResponse<List<FullDeveloperDTO>>();
 
             var cacheKey = $"developers:page:{page}:pageSize:{pageSize}";
+            
             var cachedData = await _cache.GetAsync<List<FullDeveloperDTO>>(cacheKey);
 
             if(cachedData != null)

@@ -20,6 +20,7 @@ namespace CRMApi.Services.Services
             }
 
             var value = await _cache.GetStringAsync(key);
+            
             if(value is null || string.IsNullOrEmpty(value))
             {
                 await _cache.RemoveAsync(key);
@@ -58,6 +59,7 @@ namespace CRMApi.Services.Services
             }
 
             var jsonData = JsonSerializer.Serialize(value);
+            await _cache.SetStringAsync(key , jsonData, options);
         }
     }
 }
