@@ -81,6 +81,7 @@ public class Program
            ConnectionMultiplexer.Connect(redisConnectionString)
         ); 
 
+
         //Configure IOptions for AppSettings
         builder.Services.Configure<AppSettings>(options =>
         {
@@ -99,17 +100,7 @@ public class Program
             options.ExpirationMinutes = int.Parse(builder.Configuration["JWT_EXPIRATION_MINUTES"] ?? throw new InvalidOperationException("JWT_EXPIRATION_MINUTES is not configured."));
         });
         
-
-        // builder.Services.AddCors(options =>
-        // {
-        //     options.AddPolicy("AllowFrontendOnly", policy =>
-        //     {
-        //         policy.WithOrigins("https://projsync.vercel.app/")
-        //               .AllowAnyMethod()
-        //               .AllowAnyHeader();
-        //     });
-        // });
-
+   
         // Register model services
         builder.Services.AddScoped<IDeveloperService, DeveloperService>();
         builder.Services.AddScoped<IProjectService, ProjectService>();
@@ -168,54 +159,6 @@ public class Program
 
         var app = builder.Build();
 
-        //Run migrations at startup 
-        //using (var scope = app.Services.CreateScope())
-        //{
-        //    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        //    await db.Database.MigrateAsync();
-        //}
-
-        //Seed Roles
-        // using (var scope = app.Services.CreateScope())
-        // {
-        //     var roleManager = scope.ServiceProvider.GetRequiredService<RoleSeeder>();
-        //     await roleManager.SeedRolesAsync();
-        // }
-
-        //Create First Admin
-        // using (var scope = app.Services.CreateScope())
-        // {
-
-        //     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        //     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-
-        //     if (!db.Users.Any())
-        //     {
-                
-        //         var passwordValue = builder.Configuration["ADMIN_PASSWORD"] ?? throw new InvalidOperationException("ADMIN_PASSWORD is not configured.");
-
-        //         var admin = new ApplicationUser
-        //         {
-        //             FirstName = "Sei",
-        //             SecondName = "Godwin",
-        //             UserName = "seigodwin",
-        //             Email = "seigodwin65@gmail.com",
-        //             PhoneNumber = "0540580393"
-        //         };
-
-        //         var results = await userManager.CreateAsync(admin,passwordValue);
-
-        //         if (results.Succeeded)
-        //         {  
-        //             await userManager.AddToRoleAsync(admin, "Admin");
-        //         }  
-        //     }
-        // }
-
-        // Middleware
-
-        // Configure the HTTP request pipeline.
-
 
         app.MapOpenApi();    
         app.MapScalarApiReference( "", options =>
@@ -226,7 +169,6 @@ public class Program
          
         app.UseHttpsRedirection(); 
         app.UseRouting();
-        //app.UseCors("AllowFrontendOnly"); 
         app.UseAuthentication(); 
         app.UseAuthorization(); 
         app.MapControllers();
