@@ -36,12 +36,9 @@ public class Program
             .AddXmlDataContractSerializerFormatters();
 
         //Add DbContext
-        // var connectionString = builder.Environment.IsProduction() ?
-        // builder.Configuration["SUPABASE_CONNECTION_STRING"] :
-        // builder.Configuration["DEFAULT_POSTGRESQL_DB_CONNECTION_STRING"];
-
-         var connectionString = builder.Configuration["SUPABASE_CONNECTION_STRING"];
-      
+        var connectionString = builder.Environment.IsProduction() ?
+        builder.Configuration["SUPABASE_CONNECTION_STRING"] :
+        builder.Configuration["DEFAULT_POSTGRESQL_DB_CONNECTION_STRING"];
 
         if(string.IsNullOrEmpty(connectionString))
         {
@@ -87,10 +84,7 @@ public class Program
         //Configure IOptions for AppSettings
         builder.Services.Configure<AppSettings>(options =>
         {
-            options.DefaultSqlDbConnectionString = builder.Configuration["DEFAULT_POSTGRESQL_DB_CONNECTION_STRING"] ?? throw new InvalidOperationException("DEFAULT_POSTGRESQL_DB_CONNECTION_STRING is not configured.");
             options.DefaultRedisConnectionString = builder.Configuration["DEFAULT_REDIS_CONNECTION_STRING"] ?? throw new InvalidOperationException("DEFAULT_REDIS_CONNECTION_STRING is not configured.");
-            options.SendGridApiKey = builder.Configuration["SENDGRID_API_KEY"] ?? throw new InvalidOperationException("SENDGRID_API_KEY is not configured.");
-            options.FromEmail = builder.Configuration["EMAIL_FROM"] ?? throw new InvalidOperationException("EMAIL_FROM is not configured.");
         });
 
         //Configure IOptions for JwtOptions
