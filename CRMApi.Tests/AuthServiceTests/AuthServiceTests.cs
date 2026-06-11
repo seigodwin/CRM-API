@@ -22,6 +22,7 @@ namespace CRMApi.Tests.AuthServiceTests
         private readonly Mock<ITokenService> _tokenServiceMock;
         private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
         private readonly Mock<RoleManager<IdentityRole>> _roleManagerMock;
+        private readonly Mock<IEmailService> _emailServiceMock;
         private readonly AppDbContext _context;
         private readonly ApplicationUser _user;
 
@@ -31,6 +32,7 @@ namespace CRMApi.Tests.AuthServiceTests
         { 
             _rateLimitServiceMock = new Mock<IRateLimitService>();
             _tokenServiceMock = new Mock<ITokenService>();
+            _emailServiceMock = new Mock<IEmailService>();
             _context = CreateDbContext();
           
 
@@ -53,7 +55,7 @@ namespace CRMApi.Tests.AuthServiceTests
             );
 
             _sut = new AuthService(_context, _userManagerMock.Object, _roleManagerMock.Object,
-                _rateLimitServiceMock.Object, _tokenServiceMock.Object);
+                _rateLimitServiceMock.Object, _tokenServiceMock.Object, _emailServiceMock.Object);
         }
 
         [Fact]
