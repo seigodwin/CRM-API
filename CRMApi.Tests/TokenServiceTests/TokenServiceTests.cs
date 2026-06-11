@@ -4,9 +4,10 @@ using CRMApi.Utility.Interfaces;
 using CRMApi.Utility.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
+using MicrosoftOptions = Microsoft.Extensions.Options;
 using Moq;
 using StackExchange.Redis;
+
 
 namespace CRMApi.Tests.TokenGenerationTests
 {
@@ -15,6 +16,7 @@ namespace CRMApi.Tests.TokenGenerationTests
         private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
         private readonly Mock<IConnectionMultiplexer> _redisMock;
         private readonly Mock<IDatabase> _redisDbMock;
+        private readonly MicrosoftOptions.IOptions<JwtOptions> _jwtOptions;
 
         private readonly TokenService _sut;
 
@@ -35,15 +37,16 @@ namespace CRMApi.Tests.TokenGenerationTests
                 .Returns(_redisDbMock.Object);
 
             // JWT options
-            var jwtOptions = Options.Create(new JwtOptions
+            var jwtOptions = new JwtOptions()
             {
                 Secret = "Your_Super_Secret_Key_For_Testing",
                 Issuer = "test",
                 Audience = "test"
-            });
+            };
+            _jwtOptions = MicrosoftOptions.Options.Create(jwtOptions);
 
             // SUT
-            _sut = new TokenService(_userManagerMock.Object, _redisMock.Object, jwtOptions);
+            _sut = new TokenService(_userManagerMock.Object, _redisMock.Object, _jwtOptions);
 
         }
 

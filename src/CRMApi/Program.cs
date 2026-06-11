@@ -2,6 +2,8 @@
 using CRM_API.Options;
 using CRMApi.DbContexts;
 using CRMApi.Domain.Models;
+using CRMApi.Options;
+using CRMApi.Services.Implimentations;
 using CRMApi.Services.Interfaces;
 using CRMApi.Services.ModelServices;
 using CRMApi.Services.Services;
@@ -11,12 +13,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Resend;
 using Scalar.AspNetCore;
 using StackExchange.Redis;
 using System.Security.Claims;
 using System.Text;
 
-public class Program
+public class Program 
 {
     public static async Task Main(string[] args)
     {
@@ -85,13 +88,22 @@ public class Program
         //IDatabase
         builder.Services.AddSingleton<IConnectionMultiplexer>(
            ConnectionMultiplexer.Connect(redisConnectionString)
-        ); 
+        );
 
 
-        //Configure IOptions for AppSettings
-        builder.Services.Configure<AppSettings>(options =>
+        //Configure Resend Mail client
+
+        var resendAPIKEY = builder.Configuration["RESEND_API_KEY"] ?? throw new InvalidOperationException("Resend client api key has not been configured");
+
+        builder.Services.AddResend(o =>
         {
-            options.DefaultRedisConnectionString = builder.Configuration["DEFAULT_REDIS_CONNECTION_STRING"] ?? throw new InvalidOperationException("DEFAULT_REDIS_CONNECTION_STRING is not configured.");
+            o.ApiToken = resendAPIKEY;
+        });
+
+        //Configure IOptions for EmailOptions
+        builder.Services.Configure<EmailOptions>(options =>
+        {
+            options.FromEmail = builder.Configuration["FROM_EMAIL"] ?? throw new InvalidOperationException("FROM_EMAIL is not configured");
         });
 
         //Configure IOptions for JwtOptions
@@ -112,7 +124,7 @@ public class Program
 
         // Register utility services
         builder.Services.AddScoped<ITokenService, TokenService>();
-        builder.Services.AddSingleton<IEmailService, EmailService>();
+        builder.Services.AddScoped<IEmailService, EmailService>();
         builder.Services.AddScoped<IDistributedRedisCacheService, DistributedRedisCacheService>();
         builder.Services.AddScoped<IRateLimitService, RateLimitService>();
         builder.Services.AddTransient<RoleSeeder>();
