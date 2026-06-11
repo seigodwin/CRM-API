@@ -22,16 +22,18 @@ namespace CRMApi.Services.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITokenService _tokenService;
         private readonly IRateLimitService _rateLimitService;
+        private readonly IEmailService _eMailService;
 
         public AuthService(AppDbContext context,UserManager<ApplicationUser> userManager, 
         RoleManager<IdentityRole> roleManager, IRateLimitService rateLimitService,
-        ITokenService tokenService)
+        ITokenService tokenService, IEmailService emailService)
         {
             _rateLimitService = rateLimitService;
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
             _tokenService = tokenService;
+            _eMailService = emailService;
         }
 
         public async Task<ServiceResponse<string>> AssignRolesAsync(AssignRoleRequestDto model)
@@ -250,13 +252,16 @@ namespace CRMApi.Services.Services
                 return response; 
             }  
 
+            var token = string.Empty;
             try
             {
-                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                if(token is not null && !string.IsNullOrWhiteSpace(token))
+                token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                if(!string.IsNullOrWhiteSpace(token))
                 {
                     response.Data = token;
                     response.Message = "Password reset token generated";
+
+                    
                 }
             }
             catch(Exception ex)
@@ -264,8 +269,10 @@ namespace CRMApi.Services.Services
                 response.Success = false;
                 response.Message = $"Failed to generate password reset token: {ex.Message}";
             }
-           
-           return response;
+
+            await _eMailService.ResetPasswordRequestEmailAsync(user.Email!, user.UserName!, token);
+
+            return response;
         }
 
         public async Task<ServiceResponse<AuthenticatedUsertDto>> LoginAsync(LoginRequestDto loginDto)
@@ -539,6 +546,8 @@ namespace CRMApi.Services.Services
                 response.Success = false;
                 response.Message = $"Failed to register new user: {ex.Message}";
             }
+
+            await _eMailService.WelcomeEmailAsync(developer.Email, developer.UserName);
             
             return response;
         }
@@ -607,6 +616,8 @@ namespace CRMApi.Services.Services
                     response.Message = $"Failed to reset password: {changedPassword.Errors.FirstOrDefault()}";
                 }
                 response.Message = "Password reset success";
+
+                
             }
 
             catch(Exception ex)
@@ -614,6 +625,8 @@ namespace CRMApi.Services.Services
                 response.Success = false;
                 response.Message = $"Failed to reset password: {ex.Message}";
             }
+
+            await _eMailService.ResetPasswordResponseEmailAsync(user.Email!, user.UserName!);
             return response;
         }
     }
