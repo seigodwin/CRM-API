@@ -275,7 +275,6 @@ namespace CRMApi.Tests.AuthServiceTests
                 Password = "testpassword"
             };
 
-       
 
             _userManagerMock.Setup(um => um.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((ApplicationUser?)null);
             
@@ -313,12 +312,8 @@ namespace CRMApi.Tests.AuthServiceTests
         }
 
 
-
-
-
-
-
         private AppDbContext CreateDbContext()
+
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())

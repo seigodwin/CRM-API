@@ -10,7 +10,6 @@ using CRMApi.Utility;
 using CRMApi.Utility.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using StackExchange.Redis;
 
 
 namespace CRMApi.Services.Services
