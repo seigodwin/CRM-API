@@ -1,6 +1,7 @@
 # Scalable .NET 10 CRM API
 
 [![CI/CD Pipeline](https://github.com/seigodwin/crm-api/actions/workflows/main.yml/badge.svg)](https://github.com/seigodwin/crm-api/actions/workflows/main.yml)
+[![Deployed to Render](https://img.shields.io/badge/Deployed%20to-Render-black?style=flat&logo=render&logoColor=white)](https://crm-api.onrender.com)
 
 ## About
 
@@ -10,15 +11,14 @@ This project is a scalable CRM API built with .NET 10, featuring secure authenti
 
 ## Key Features
 
-* JWT authentication with access and refresh token support
-* Role-based authorization (Admin, Manager, User, etc.)
-* Redis distributed caching for high-performance data access
-* Refresh token storage with secure rotation strategy
-* Rate limiting for authentication and sensitive endpoints
+* **JWT Authentication:** Access and refresh token support with secure token rotation strategy.
+* **Role-Based Authorization:** Fine-grained access control (Admin, Manager, User, etc.).
+* **Redis Distributed Caching:** High-performance data access and session tracking.
+* **Rate Limiting:** Redis-backed brute-force prevention on sensitive endpoints.
+* **Structured Logging:** Centralized logging with context enrichment, optimized for deep observability.
 * **Robust Automated Testing Suite:** Comprehensive unit testing isolated via mocking to ensure codebase reliability.
-* Structured logging and centralized error handling
-* Clean architecture principles (separation of concerns)
-* RESTful API design
+* **Clean Architecture Principles:** Strict separation of concerns and robust error-handling middleware.
+* **RESTful API Design:** Predictable, resource-oriented endpoint architecture.
 
 ---
 
@@ -30,6 +30,10 @@ This project is a scalable CRM API built with .NET 10, featuring secure authenti
 * PostgreSQL via Supabase and localhost
 * Redis (distributed caching & rate limiting)
 * JWT (`System.IdentityModel.Tokens.Jwt`)
+
+### Logging & Diagnostics
+* **Serilog:** Rich, asynchronous structured logging abstraction.
+* **Seq:** Centralized developer dashboard for real-time log ingestion, querying, and analysis.
 
 ### Testing Suite
 * **xUnit:** Core test framework for structuring and executing unit tests.
@@ -47,23 +51,23 @@ This project is a scalable CRM API built with .NET 10, featuring secure authenti
 
 The system follows a layered architecture:
 
-* Controllers: Handle HTTP requests
-* Services: Business logic layer
-* Data Access Layer: Entity Framework Core
-* Cache Layer: Redis via `IDistributedCache` / `StackExchange.Redis`
-* Authentication Layer: JWT + Refresh Token system
-* **Testing Layer:** Isolated test projects mirroring the application structure to validate services and utilities independently.
+* **Controllers:** Handle HTTP requests and entry-point validation.
+* **Services:** Core business logic layer.
+* **Data Access Layer:** Entity Framework Core interacting with PostgreSQL.
+* **Cache Layer:** Redis abstraction via `IDistributedCache` / `StackExchange.Redis`.
+* **Logging & Auth Layer:** Serilog pipeline alongside JWT + Refresh Token logic.
+* **Testing Layer:** Isolated test projects mirroring the application structure to validate components independently.
 
 ---
 
 ## Authentication Flow
 
-1. User logs in with credentials
-2. Server validates credentials
-3. Access token (JWT) is generated
-4. Refresh token is generated and stored securely
-5. Access token is used for API requests
-6. Refresh token is used to obtain new access tokens
+1. User logs in with credentials.
+2. Server validates credentials.
+3. Access token (JWT) is generated.
+4. Refresh token is generated and stored securely.
+5. Access token is used for API requests.
+6. Refresh token is used to obtain new access tokens.
 
 ---
 
@@ -71,10 +75,10 @@ The system follows a layered architecture:
 
 Redis is used for:
 
-* Caching frequently accessed data
-* Rate limiting (login, password reset, OTP requests)
-* Refresh token storage (optional or hybrid with database)
-* Session tracking and security enforcement
+* Caching frequently accessed data.
+* Rate limiting (login, password reset, OTP requests).
+* Refresh token storage (optional or hybrid with database).
+* Session tracking and security enforcement.
 
 ---
 
@@ -90,14 +94,23 @@ Each request is tracked using a time-based counter stored in Redis with automati
 
 ---
 
+## Structured Logging Architecture
+
+The API uses **Serilog** configured with asynchronous processing pipelines to guarantee non-blocking logging execution. 
+
+* **Local Development:** Logs are simultaneously streamed to the system terminal and formatted as rich, queryable JSON dispatched via background threads to a local **Seq** Docker container.
+* **Production (Render):** System logs are written directly to standard output (`Console`), where Render's native log aggregators stream live operational metrics without forcing relational database writes.
+
+---
+
 ## Security Features
 
-* Password hashing using ASP.NET Identity
-* JWT signing with secure symmetric key
-* Token validation with issuer and audience checks
-* Refresh token rotation and reuse protection
-* Rate limiting for brute-force prevention
-* Secure secret management via environment variables
+* Password hashing using ASP.NET Identity.
+* JWT signing with secure symmetric keys.
+* Token validation with explicit issuer and audience checks.
+* Refresh token rotation and reuse protection.
+* Rate limiting for brute-force prevention.
+* Secure secret management via environment variables.
 
 ---
 
@@ -107,17 +120,17 @@ The project includes automated deployment workflows:
 
 * **Automated QA:** Runs `dotnet test` on every push and pull request to ensure zero regressions before deployment.
 * Automatic deployment to Render upon successful test runs.
-* Environment-based configuration handling
-* Secure handling of secrets via CI/CD variables
+* Environment-based configuration handling.
+* Secure handling of secrets via CI/CD variables.
 
 ---
 
 ## Cloud Deployment
 
-* Backend hosted on Render
-* Database hosted on Supabase (PostgreSQL)
-* Redis instance used for caching and rate limiting
-* Environment variables configured for production and staging
+* Backend hosted on Render.
+* Database hosted on Supabase (PostgreSQL).
+* Redis instance used for caching and rate limiting.
+* Environment variables configured for production and staging.
 
 ---
 
@@ -139,7 +152,7 @@ The project includes automated deployment workflows:
 ### Prerequisites
 
 * .NET 10 SDK
-* Redis instance (local or cloud)
+* Docker Desktop (for running background services)
 * PostgreSQL database (Supabase recommended)
 
 ---
@@ -157,8 +170,13 @@ Update `.env` copy .env variables from `.env.example`:
 
 ### Run Locally & Testing
 
-#### Running the Application
+#### 1. Spin up Required Infrastructure (Redis & Seq)
+To initialize your local caching, rate-limiting, and centralized logging UI dashboard, launch the service infrastructure via Docker Desktop or run:
+
 ```bash
-dotnet restore
-dotnet build
-dotnet watch # or dotnet run
+# Start Seq Logger Dashboard
+docker run --name seq -d --restart unless-stopped -e ACCEPT_EULA=Y -p 5341:5341 -p 8081:80 datalust/seq:latest
+
+
+# Start Redis Cache Server (if not running locally)
+docker run --name redis-crm -d -p 6379:6379 redis:alpine
