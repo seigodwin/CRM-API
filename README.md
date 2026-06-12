@@ -1,7 +1,7 @@
 # Scalable .NET 10 CRM API
 
 [![CI/CD Pipeline](https://github.com/seigodwin/crm-api/actions/workflows/main.yml/badge.svg)](https://github.com/seigodwin/crm-api/actions/workflows/main.yml)
-[![Deployed to Render](https://img.shields.io/badge/Deployed%20to-Render-black?style=flat&logo=render&logoColor=white)](https://crm-api.onrender.com)
+[![Deployed to Render](https://img.shields.io/badge/Deployed%20to-Render-black?style=flat&logo=render&logoColor=white)](https://crm-api-47oi.onrender.com/)
 
 ## About
 
