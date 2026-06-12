@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Resend;
 using Scalar.AspNetCore;
+using Serilog;
 using StackExchange.Redis;
 using System.Security.Claims;
 using System.Text;
@@ -167,13 +168,26 @@ public class Program
             Console.WriteLine($"Key Vault error: {ex.Message}");
             throw;
         }
-         
+
+
+        //Serilog
+        Serilog.Log.Logger = new LoggerConfiguration()
+        .MinimumLevel.Information()
+        .WriteTo.Console()
+        .WriteTo.Seq("http://localhost:5341")
+        .CreateLogger();
+
+        builder.Host.UseSerilog();
+
         builder.Services.AddAuthorization();
 
         builder.Services.AddEndpointsApiExplorer();
 
         var app = builder.Build();
 
+        app.UseSerilogRequestLogging();
+
+        Serilog.Log.Information("Seq test log from CRM API");
 
         app.MapOpenApi();
 
@@ -199,9 +213,10 @@ public class Program
              options.WithTitle("CRM API Documentation");
          });
         }
+
          
-        app.UseHttpsRedirection(); 
         app.UseRouting();
+        app.UseHttpsRedirection(); 
         app.UseCors("AllowAll");
         app.UseAuthentication(); 
         app.UseAuthorization(); 
