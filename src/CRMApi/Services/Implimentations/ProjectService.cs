@@ -164,7 +164,8 @@ namespace CRMApi.Services.Services
 
             var projectPerPageDTO = new List<FullProjectDTO>();
 
-            var projects = await _context.Projects.Include(p => p.Team)
+            var projects = await _context.Projects.AsNoTracking().Include(p => p.Team)
+                                                   .OrderBy(p => p.Id)
                                                    .Skip((page - 1) * pageSize)
                                                    .Take(pageSize)
                                                    .ToListAsync();
@@ -227,7 +228,7 @@ namespace CRMApi.Services.Services
                 response.Message = "Project retrieved successfully from cache.";
                 return response;
             }
-            var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id);
+            var project = await _context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
 
             if (project is null)
             {

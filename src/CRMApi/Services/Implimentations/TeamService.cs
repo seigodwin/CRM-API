@@ -322,7 +322,7 @@ namespace CRMApi.Services.ModelServices
         {
             Page = Page < 1 ? 1 : Page;
             PageSize = PageSize < 1 ? 1 : (PageSize > 30 ? 30 : PageSize);
-               
+
             var response = new ServiceResponse<List<FullTeamDTO>>();
             var cacheKey = $"teams:page:{Page}:pageSize:{PageSize}";
             var cachedData = await _cache.GetAsync<List<FullTeamDTO>>(cacheKey);
@@ -334,7 +334,8 @@ namespace CRMApi.Services.ModelServices
                 return response;
             }
 
-            var teams = await _context.Teams.Include(t => t.Developers)
+            var teams = await _context.Teams.AsNoTracking().Include(t => t.Developers)
+                                            .OrderBy(t => t.Id)
                                             .Include(t => t.Projects)
                                             .Include(t => t.TeamLead)   
                                             .Skip((Page - 1) * PageSize)
@@ -412,7 +413,8 @@ namespace CRMApi.Services.ModelServices
                 return response;
             }
             
-            var team = await _context.Teams.Include(t => t.Projects)
+            var team = await _context.Teams.AsNoTracking().Include(t => t.Projects)
+                                            .AsNoTracking()
                                            .Include(t => t.Developers)
                                            .Include(T => T.TeamLead)
                                            .FirstOrDefaultAsync(t => t.Id == id);

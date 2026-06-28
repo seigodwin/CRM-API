@@ -54,7 +54,7 @@ namespace CRMApi.Services.Services
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 1 : (pageSize < 30 ? 30 : pageSize);
-            
+
             var response = new ServiceResponse<List<FullDeveloperDTO>>();
 
             var cacheKey = $"developers:page:{page}:pageSize:{pageSize}";
@@ -68,7 +68,8 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            var developers = await _context.Developers.Include(d => d.Teams)
+            var developers = await _context.Developers.AsNoTracking().Include(d => d.Teams)
+                                                        .OrderBy(d => d.Id)
                                                        .Skip((page - 1) * pageSize) 
                                                        .Take(pageSize) 
                                                        .ToListAsync(); 
