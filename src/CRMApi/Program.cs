@@ -170,13 +170,20 @@ public class Program
         }
 
         //Serilog
-        var seqConnectionString = builder.Configuration["SEQ_CONNECTION_STRING"] ?? throw new InvalidOperationException("Seq connection is not configured");
-
-        Serilog.Log.Logger = new LoggerConfiguration()
+        var loggerConfig = new LoggerConfiguration()
         .MinimumLevel.Information()
-        .WriteTo.Console()
-        .WriteTo.Seq(seqConnectionString)
-        .CreateLogger();
+        .WriteTo.Console();
+
+        if (builder.Environment.IsDevelopment())
+        {
+            loggerConfig.WriteTo.Seq(
+                builder.Configuration["SEQ_CONNECTION_STRING"]
+                ?? throw new InvalidOperationException("SEQ_CONNECTION_STRING is not configured."));
+        }
+
+        Serilog.Log.Logger = loggerConfig.CreateLogger();
+        
+       
 
         builder.Host.UseSerilog();
 
