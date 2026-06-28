@@ -320,6 +320,9 @@ namespace CRMApi.Services.ModelServices
 
         public async Task<ServiceResponse<List<FullTeamDTO>>> GetAllTeams(int Page = 1, int PageSize = 10)
         {
+            Page = Page < 1 ? 1 : Page;
+            PageSize = PageSize < 1 ? 1 : (PageSize > 30 ? 30 : PageSize);
+               
             var response = new ServiceResponse<List<FullTeamDTO>>();
             var cacheKey = $"teams:page:{Page}:pageSize:{PageSize}";
             var cachedData = await _cache.GetAsync<List<FullTeamDTO>>(cacheKey);

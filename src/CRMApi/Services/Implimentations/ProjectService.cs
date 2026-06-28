@@ -148,6 +148,9 @@ namespace CRMApi.Services.Services
         }
         public async Task<ServiceResponse<List<FullProjectDTO>>> GetAllProjects(int page = 1, int pageSize = 10)
         {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize < 1 ? 1 : (pageSize > 30 ? 30 : pageSize);
+            
             var response = new ServiceResponse<List<FullProjectDTO>>();
 
             var cacheKey = $"projects:page:{page}:pageSize:{pageSize}";

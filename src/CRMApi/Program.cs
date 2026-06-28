@@ -169,21 +169,22 @@ public class Program
             throw;
         }
 
-
         //Serilog
+        var seqConnectionString = builder.Configuration["SEQ_CONNECTION_STRING"] ?? throw new InvalidOperationException("Seq connection is not configured");
+
         Serilog.Log.Logger = new LoggerConfiguration()
         .MinimumLevel.Information()
         .WriteTo.Console()
-        .WriteTo.Seq("http://localhost:5341")
+        .WriteTo.Seq(seqConnectionString)
         .CreateLogger();
 
         builder.Host.UseSerilog();
 
-        builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization();  
 
-        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddEndpointsApiExplorer();  
 
-        var app = builder.Build();
+        var app = builder.Build(); 
 
         app.UseSerilogRequestLogging();
 
@@ -204,7 +205,6 @@ public class Program
                 };
             });
         }
-
         else
         {
             app.MapScalarApiReference( "", options =>
@@ -214,7 +214,6 @@ public class Program
          });
         }
 
-         
         app.UseRouting();
         app.UseHttpsRedirection(); 
         app.UseCors("AllowAll");
