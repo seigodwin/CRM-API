@@ -75,7 +75,7 @@ namespace CRMApi.Services.Services
                                                        .ToListAsync(); 
 
 
-            if (developers.Count == 0)  
+            if (!developers.Any())  
             {
                 response.Message = "No records found";
                 response.Success = false;
@@ -99,7 +99,7 @@ namespace CRMApi.Services.Services
                     ur => ur.RoleId, 
                     r => r.Id, 
                     (ur, r) => r.Name
-                )// Safely handles the compiler warning if IdentityRole.Name is nullable
+                )
                 .Select(roleName => roleName ?? string.Empty) 
                 .ToList(),
                 

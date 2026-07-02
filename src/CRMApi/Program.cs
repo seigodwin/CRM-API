@@ -183,8 +183,6 @@ public class Program
 
         Serilog.Log.Logger = loggerConfig.CreateLogger();
         
-       
-
         builder.Host.UseSerilog();
 
         builder.Services.AddAuthorization();  
