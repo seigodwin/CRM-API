@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CRMApi.Controllers 
 {
+    [Authorize(Roles = "Admin")]
     [Route("api/v1/team")] 
     [ApiController]
     public class TeamController(ITeamService teamService) : ControllerBase 
@@ -70,7 +71,7 @@ namespace CRMApi.Controllers
             return response.Success ? NoContent() : BadRequest(response);
         }
 
-
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAllTeams(int Page = 1, int PageSize = 10)
         {
@@ -81,6 +82,7 @@ namespace CRMApi.Controllers
 
 
         
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTeamById(int id)
         {

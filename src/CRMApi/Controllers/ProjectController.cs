@@ -12,13 +12,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRMApi.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [Route("api/v1/project")]
     [ApiController]
-    //[Authorize(Roles = "Admin,Employee")]
     public class ProjectController(IProjectService projectService) : ControllerBase
     {
         private readonly IProjectService _projectService = projectService;
-   
+    
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAllProjects(int page = 1, int pageSize = 10)
         {
@@ -28,6 +29,7 @@ namespace CRMApi.Controllers
 
         }
         
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProjectById(int id)
         {

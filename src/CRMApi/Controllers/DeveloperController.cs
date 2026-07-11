@@ -5,16 +5,19 @@ using CRMApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using StackExchange.Redis;
 
 
 namespace CRMApi.Controllers
 {
+    [Authorize(Roles = "Admin")]   
     [Route("api/v1/developer")]
-    [ApiController]
+    [ApiController]    
     public class DeveloperController(IDeveloperService developerService) : ControllerBase
     {
         private readonly IDeveloperService _developerService = developerService;
         
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAllDevelopers(int page = 1,  int pageSize = 10)
         {
@@ -29,6 +32,7 @@ namespace CRMApi.Controllers
         }
 
         
+        [AllowAnonymous]
         [HttpGet("{id}" , Name = "GetDeveloperById")]
         public async Task<IActionResult> GetDeveloperById(string id)
         {
