@@ -13,9 +13,10 @@ namespace CRMApi.Domain.DTOs
         public string PhoneNumber { get; set; } = string.Empty;
         [EmailAddress]
         public  string Email { get; set; } = string.Empty;
+        [MaxLength(50)]
         public List<string> Stack { get; set; } = new List<string>();
         public List<string> Roles {get; set;} = new List<string>();
-        public List<FullTeamDTO>? Teams { get; set; } = new List<FullTeamDTO>();
+        public List<FullTeamDTO> Teams { get; set; } = new List<FullTeamDTO>();
 
     }
 }

@@ -104,7 +104,7 @@ namespace CRMApi.Services.Services
                 .ToList(),
                 
 
-                Teams = d.Teams is null ? null : d.Teams.Select(t => new FullTeamDTO
+                Teams = d.Teams.Select(t => new FullTeamDTO
                 {
                     Id = t.Id,
                     Title = t.Title,
@@ -149,7 +149,7 @@ namespace CRMApi.Services.Services
             }
 
             response.Data = new FullDeveloperDTO
-            {
+            { 
                 Id = developer.Id,
                 FirstName = developer.FirstName,
                 SecondName = developer.LastName,
@@ -159,7 +159,7 @@ namespace CRMApi.Services.Services
                 Stack = developer.Stack,
                 Roles = (await _employeeManager.GetRolesAsync(developer)).ToList() ?? new List<string>(),
 
-                Teams = developer.Teams is null ? null : developer.Teams.Select(t => new FullTeamDTO
+                Teams = developer.Teams.Select(t => new FullTeamDTO
                 {
                     Id = t.Id,
                     Title = t.Title,
@@ -219,7 +219,6 @@ namespace CRMApi.Services.Services
 
             return response;
         }
-
 
         public async Task<ServiceResponse<string>> UpdateDeveloperById(string id, UpdateDevRequestDTO developerDTO)
         {
