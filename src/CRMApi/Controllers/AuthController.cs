@@ -29,7 +29,6 @@ namespace CRMApi.Controllers
             _userService = userService;
         }
 
-    
         [HttpPost("register-developer")]
         public async Task<IActionResult> RegisterDeveloper([FromBody] RegisterDeveloperRequestDto dto) 
         {

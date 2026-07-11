@@ -25,7 +25,7 @@ namespace CRMApi.Controllers
 
             if (!serviceResponse.Success)
             {
-                return NotFound(new { serviceResponse.Success, serviceResponse.Message });
+                return NotFound(serviceResponse);
             }
 
             return Ok(serviceResponse);
@@ -40,7 +40,7 @@ namespace CRMApi.Controllers
 
             if (!serviceResponse.Success)
             {
-                return NotFound(new {serviceResponse.Message });
+                return NotFound(serviceResponse);
             }
 
             return Ok(serviceResponse);
@@ -54,7 +54,7 @@ namespace CRMApi.Controllers
 
             if (!serviceResponse.Success)
             {
-                return NotFound(new {serviceResponse.Message });
+                return NotFound(serviceResponse);
             }
 
             return NoContent();
@@ -78,7 +78,7 @@ namespace CRMApi.Controllers
 
             if (!serviceResponse.Success)
             {
-                return BadRequest(new { serviceResponse.Success, serviceResponse.Message });
+                return BadRequest(serviceResponse);
             }
 
             return NoContent();
@@ -102,7 +102,7 @@ namespace CRMApi.Controllers
 
             if (!response.Success)
             {
-                return BadRequest(new { response.Success, response.Message });
+                return BadRequest(response);
             }
 
             return NoContent();
