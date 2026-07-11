@@ -17,6 +17,7 @@ using CRM_API.Domain.DTos;
 
 namespace CRMApi.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [Route("api/v1/auth")]
     [ApiController]
     public class  AuthController : ControllerBase

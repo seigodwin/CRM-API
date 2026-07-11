@@ -19,7 +19,7 @@ namespace CRMApi.Utility.Services
 {
     public class TokenService : ITokenService
     {
-       
+      
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly JwtOptions _jwtOptions;
         private readonly IDatabase _cache;
