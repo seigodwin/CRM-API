@@ -42,7 +42,6 @@ namespace CRMApi.Services.Services
                 await _context.SaveChangesAsync();
 
               
-
                 response.Data = new FullProjectDTO
                 {
                     Id = project.Id,
@@ -74,7 +73,6 @@ namespace CRMApi.Services.Services
             {
                 response.Message = $"Database error: {dbEx.Message}";
                 response.Success = false;
-
             }                                                   
 
             return response;               
@@ -228,6 +226,7 @@ namespace CRMApi.Services.Services
                 response.Message = "Project retrieved successfully from cache.";
                 return response;
             }
+            
             var project = await _context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
 
             if (project is null)

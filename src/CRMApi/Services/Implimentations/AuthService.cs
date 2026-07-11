@@ -556,7 +556,7 @@ namespace CRMApi.Services.Services
 
             if(id is null || string.IsNullOrEmpty(id)){
                 response.Success = false;
-                response.Message = "Provide valid data to continue";
+                response.Message = "Invalid user id";
                 return response;
             }
             try
@@ -572,10 +572,10 @@ namespace CRMApi.Services.Services
                 response.Message = "Role deleted successfully";
             
             }
-            catch(Exception ex)
+            catch(Exception)
             {
                 response.Success = false;
-                response.Message = $"Failed to delete role: {ex.Message}";
+                response.Message = $"Failed to delete role";
             }
             return response;
         }
@@ -614,9 +614,7 @@ namespace CRMApi.Services.Services
                     response.Success = false;
                     response.Message = $"Failed to reset password: {changedPassword.Errors.FirstOrDefault()}";
                 }
-                response.Message = "Password reset success";
-
-                
+                response.Message = "Password reset success";                
             }
 
             catch(Exception ex)
@@ -630,5 +628,3 @@ namespace CRMApi.Services.Services
         }
     }
 }
-
-        

@@ -121,7 +121,7 @@ namespace CRMApi.Services.Services
 
             await _cache.SetAsync(cacheKey, developersDTO, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));   
 
-            return response;     
+            return response;
         }
         public async Task<ServiceResponse<FullDeveloperDTO>> GetDeveloperById(string id)
         {
@@ -183,7 +183,7 @@ namespace CRMApi.Services.Services
 
             if (developer is null)
             {
-                response.Message = $"Developer with Id: {id} not found!";
+                response.Message = $"Developer not found!";
                 response.Success = false;
                 return response;
             }
@@ -228,7 +228,7 @@ namespace CRMApi.Services.Services
 
             if (developer is null)
             {
-                response.Message = $"Developer with id: {id} not found!";
+                response.Message = $"Developer not found!";
                 response.Success = false;
                 return response;
             }
