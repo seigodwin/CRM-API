@@ -35,7 +35,6 @@ namespace CRMApi.Services.Services
                 Description = projectDTO.Description,
                 ClientName = projectDTO.ClientName,
                 Status = (ProjectStatus)projectDTO.Status,
-                DateStarted = projectDTO.DateStarted,
                 TeamId = projectDTO.TeamId,
             };
 
