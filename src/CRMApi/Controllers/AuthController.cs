@@ -28,7 +28,7 @@ namespace CRMApi.Controllers
         {
             _userService = userService;
         }
-
+        
         [HttpPost("register-developer")]
         public async Task<IActionResult> RegisterDeveloper([FromBody] RegisterDeveloperRequestDto dto) 
         {
@@ -64,7 +64,7 @@ namespace CRMApi.Controllers
             return BadRequest(ModelState);
         }
 
-
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto loginDTO)
         {

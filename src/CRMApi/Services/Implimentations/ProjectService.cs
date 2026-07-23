@@ -353,7 +353,6 @@ namespace CRMApi.Services.Services
 
             try
             {
-
                 await _context.SaveChangesAsync();
                 await _cache.RemoveAsync($"project:{id}");
 
