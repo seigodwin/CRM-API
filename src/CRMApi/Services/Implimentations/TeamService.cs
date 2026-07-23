@@ -360,7 +360,7 @@ namespace CRMApi.Services.ModelServices
                     Title = team.Title,
                     Description = team.Description,
 
-                    Developers = team.Developers.Count <= 0 ? new List<FullDeveloperDTO>() : team.Developers.Select(d => new FullDeveloperDTO
+                    Developers = team.Developers.Count == 0 ? new List<FullDeveloperDTO>() : team.Developers.Select(d => new FullDeveloperDTO
                     {
                         Id = d.Id,
                         FirstName = d.FirstName,
@@ -370,7 +370,7 @@ namespace CRMApi.Services.ModelServices
                         Email = d.Email ?? string.Empty,
                     }).ToList(),
 
-                    Projects = team.Projects.Count <= 0 ? new List<FullProjectDTO>() : team.Projects.Select(p => new FullProjectDTO
+                    Projects = team.Projects.Count == 0 ? new List<FullProjectDTO>() : team.Projects.Select(p => new FullProjectDTO
                     {
                         Id = p.Id,
                         Title = p.Title,
