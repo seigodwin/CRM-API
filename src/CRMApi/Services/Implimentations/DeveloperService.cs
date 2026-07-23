@@ -3,6 +3,7 @@ using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.DTOs.DeveloperDTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Repository;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
 using Microsoft.AspNetCore.Identity;
@@ -12,9 +13,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRMApi.Services.Services
 {
-    public class DeveloperService(AppDbContext context,
+    public class DeveloperService(IBaseRepository<Developer> repo, AppDbContext context,
     IDistributedRedisCacheService cache, UserManager<ApplicationUser> employeeManager) : IDeveloperService
     {
+        private readonly IBaseRepository<Developer> _repo = repo;
         private readonly AppDbContext _context = context;
         private readonly IDistributedRedisCacheService _cache = cache;
         private readonly UserManager<ApplicationUser> _employeeManager = employeeManager;
@@ -68,12 +70,7 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            var developers = await _context.Developers.AsNoTracking().Include(d => d.Teams)
-                                                        .OrderBy(d => d.Id)
-                                                       .Skip((page - 1) * pageSize) 
-                                                       .Take(pageSize) 
-                                                       .ToListAsync(); 
-
+            var developers = await _repo.GetAllAsync(page, pageSize);
 
             if (!developers.Any())  
             {

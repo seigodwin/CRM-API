@@ -3,6 +3,7 @@ using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.DTOs.ProjectDTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Repository;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
 using Microsoft.AspNetCore.JsonPatch;
@@ -10,8 +11,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRMApi.Services.Services 
 {
-    public class ProjectService(AppDbContext context, IDistributedRedisCacheService cache) : IProjectService
+    public class ProjectService(IBaseRepository<Project> repo,
+    AppDbContext context,  IDistributedRedisCacheService cache) : IProjectService
     {
+        private readonly IBaseRepository<Project> _repo = repo;
         private readonly AppDbContext _context = context;
         private readonly IDistributedRedisCacheService _cache = cache;
 
@@ -38,9 +41,7 @@ namespace CRMApi.Services.Services
 
             try
             {
-                await _context.Projects.AddAsync(project);
-                await _context.SaveChangesAsync();
-
+                await _repo.AddAsync(project);
               
                 response.Data = new FullProjectDTO
                 {
@@ -74,7 +75,6 @@ namespace CRMApi.Services.Services
                 response.Message = $"Database error: {dbEx.Message}";
                 response.Success = false;
             }                                                   
-
             return response;               
         }
 
@@ -82,7 +82,7 @@ namespace CRMApi.Services.Services
         {
             var response = new ServiceResponse<object>(); 
 
-            var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == id); 
+            var project = await _repo.GetById(id); 
 
             if (project is null) 
             {
@@ -93,8 +93,7 @@ namespace CRMApi.Services.Services
 
             try
             {
-                _context.Projects.Remove(project);
-                await _context.SaveChangesAsync();
+                await _repo.DeleteAsync(project);
 
                 await _cache.RemoveAsync($"project:{id}");
                 response.Message = "Project deleted Successfully";
@@ -162,20 +161,16 @@ namespace CRMApi.Services.Services
 
             var projectPerPageDTO = new List<FullProjectDTO>();
 
-            var projects = await _context.Projects.AsNoTracking().Include(p => p.Team)
-                                                   .OrderBy(p => p.Id)
-                                                   .Skip((page - 1) * pageSize)
-                                                   .Take(pageSize)
-                                                   .ToListAsync();
+            var projects = await _repo.GetAllAsync(page, pageSize);
 
-            if (projects.Count == 0)
+            if (!projects.Any())
             {
                 response.Message = "No records found!";
                 response.Success = false;
                 return response;
             }
 
-            var totalProjects = projects.Count;
+            var totalProjects = 10;
             var totalPages = (int)Math.Ceiling((decimal)totalProjects / pageSize);
 
 
@@ -227,7 +222,7 @@ namespace CRMApi.Services.Services
                 return response;
             }
             
-            var project = await _context.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+            var project = await _repo.GetById(id);
 
             if (project is null)
             {

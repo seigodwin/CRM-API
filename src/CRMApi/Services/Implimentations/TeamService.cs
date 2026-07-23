@@ -2,6 +2,7 @@
 using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Repository;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
 using Microsoft.AspNetCore.JsonPatch;
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CRMApi.Services.ModelServices
 {
-    public class TeamService(AppDbContext context, IDistributedRedisCacheService cache) : ITeamService
+    public class TeamService(AppDbContext context, 
+    IBaseRepository<Team> repo, IDistributedRedisCacheService cache) : ITeamService
     {
         private readonly AppDbContext _context = context;
+        private readonly IBaseRepository<Team> _repo = repo;
         private readonly IDistributedRedisCacheService _cache = cache;
 
         public async Task<ServiceResponse<object>> AssignDeveloperToTeam(string DeveloperId, int TeamId)
@@ -23,7 +26,7 @@ namespace CRMApi.Services.ModelServices
 
             if (team is null)
             {
-                response.Message = $"Team with Id {TeamId} not found!";
+                response.Message = $"Team not found!";
                 response.Success = false;
                 return response;
             }
@@ -32,7 +35,7 @@ namespace CRMApi.Services.ModelServices
 
             if (developer is null)
             {
-                response.Message = $"Developer with Id {DeveloperId} not found!";
+                response.Message = $"Developer not found!";
                 response.Success = false;
                 return response;
             }
@@ -292,7 +295,7 @@ namespace CRMApi.Services.ModelServices
         public async Task<ServiceResponse<object>> DeleteTeamById(int id)
         {
             var response = new ServiceResponse<object>();
-            var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == id);
+            var team = await _repo.GetById(id);
 
             if(team is null)
             {
@@ -303,8 +306,7 @@ namespace CRMApi.Services.ModelServices
 
             try
             {
-                _context.Teams.Remove(team);
-                await _context.SaveChangesAsync();
+                await _repo.DeleteAsync(team);
                 response.Message = "Team deleted successfull";
             }
 
