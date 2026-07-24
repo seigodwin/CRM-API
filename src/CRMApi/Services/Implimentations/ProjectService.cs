@@ -1,8 +1,8 @@
 ﻿
 using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
-using CRMApi.Domain.DTOs.ProjectDTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Extentions;
 using CRMApi.Repository;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
@@ -29,39 +29,13 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            var project = new Project
-            {
-                Title = projectDTO.Title,
-                Description = projectDTO.Description,
-                ClientName = projectDTO.ClientName,
-                Status = (ProjectStatus)projectDTO.Status,
-                TeamId = projectDTO.TeamId,
-            };
+            var project = projectDTO.ToEntity();
 
             try
             {
                 await _repo.AddAsync(project);
               
-                response.Data = new FullProjectDTO
-                {
-                    Id = project.Id,
-                    Title = project.Title,
-                    Description = project.Description,
-                    ClientName = project.ClientName,
-                    Status = project.Status, 
-                    
-                    Team = project.Team is null ? null : new FullTeamDTO
-                    {
-                        Id = project.Team.Id,
-                        Title = project.Team.Title,
-                        Description = project.Team.Description,
-                        TeamLeadId = project.Team.TeamLeadId ?? string.Empty
-                    },
-
-                    DateStarted = project.DateStarted,
-                    DateUpdated= project.DateUpdated,
-                    DateCompleted= project.DateCompleted, 
-                };
+                response.Data = project.ToDto();
 
                 response.Message = "Project Created successfully";
 
@@ -169,43 +143,15 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            var totalProjects = 10;
-            var totalPages = (int)Math.Ceiling((decimal)totalProjects / pageSize);
+            response.Data = projects.Select(p => p.ToDto()).ToList();
 
-
-            foreach (var project in projects)
-            {
-                projectPerPageDTO.Add(new FullProjectDTO
-                {
-                    Id = project.Id,
-                    Title = project.Title,
-                    Description = project.Description,
-                    ClientName = project.ClientName,
-                    Status = project.Status,
-                    TeamId = project.TeamId,
-                    DateStarted = project.DateStarted,
-                    DateUpdated = project.DateUpdated,
-                    DateCompleted = project.DateCompleted,
-                    
-                    Team = project.Team is null ? null : new FullTeamDTO 
-                    { 
-                        Id = project.Team.Id,
-                        Title = project.Team.Title,
-                        Description= project.Team.Description,
-                    }
-                }); 
-
-                
-            }
-
-            response.Data = projectPerPageDTO;
             response.Message = "Projects retrieved successfully" +
                                $" Current Page: {page}" +
-                               $" Page Size: {pageSize}" +
-                               $" Total Pages {totalPages}";
+                               $" Page Size: {pageSize}";
+                              
             await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
             return response;
-        }
+            }
 
         public async Task<ServiceResponse<FullProjectDTO>> GetProjectById(int id)
         {
@@ -230,33 +176,15 @@ namespace CRMApi.Services.Services
                 return response; 
             }
 
-            response.Data = new FullProjectDTO
-            {
-                Id = project.Id,
-                Title = project.Title,
-                Description = project.Description,
-                ClientName = project.ClientName,
-                Status = project.Status,
-
-                Team = project.Team is null ? null : new FullTeamDTO
-                {
-                    Id = project.Team.Id,
-                    Title = project.Team.Title,
-                    Description = project.Team.Description,
-                    TeamLeadId = project.Team.TeamLeadId
-                },
-
-                DateStarted = project.DateStarted,
-                DateUpdated = project.DateUpdated,
-                DateCompleted = project.DateCompleted,
-            };
+            response.Data = project.ToDto();
+            
             response.Message = "Project retrieved Successfully";
             
             await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
             return response;
         }
 
-        public async Task<ServiceResponse<object>> PatchProjectById(int id, JsonPatchDocument<UpdateProjectRequestDTO> patchData)
+        public async Task<ServiceResponse<object>> PatchProjectById(int id, JsonPatchDocument<ProjectDTO> patchData)
         {
             var response = new ServiceResponse<object>();
 
@@ -276,32 +204,14 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            UpdateProjectRequestDTO projectDTO = new UpdateProjectRequestDTO
-            {
-                Title = project.Title,
-                Description = project.Description,
-                ClientName = project.ClientName,
-                Status = project.Status,
-                TeamId = project.TeamId,
-                DateStarted = project.DateStarted,
-                DateUpdated = project.DateUpdated,
-                DateCompleted = project.DateCompleted,
-            };
+            var dto = project.ToUpdateDto();
 
-            patchData.ApplyTo(projectDTO);
-
-            project.Title = projectDTO.Title;
-            project.Description = projectDTO.Description;
-            project.ClientName = projectDTO.ClientName;
-            project.Status = (ProjectStatus)projectDTO.Status;
-            project.TeamId = projectDTO.TeamId;
-            project.DateStarted = projectDTO.DateStarted;
-            project.DateUpdated = projectDTO.DateUpdated;
-            project.DateCompleted = projectDTO.DateCompleted;
+            patchData.ApplyTo(dto);
 
             try
             {
-               await _context.SaveChangesAsync();
+               await _repo.UpdateAsync(project);
+             
                await _cache.RemoveAsync($"project:{id}");
 
                response.Message = "Project updated successfully!";
@@ -316,7 +226,7 @@ namespace CRMApi.Services.Services
             return response;
         }
 
-        public async Task<ServiceResponse<object>> UpdateProjectById(int id, UpdateProjectRequestDTO projectDTO)
+        public async Task<ServiceResponse<object>> UpdateProjectById(int id, ProjectDTO projectDTO)
         {
             var response = new ServiceResponse<object>();
 
@@ -336,18 +246,12 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            project.Title = projectDTO.Title;
-            project.Description = projectDTO.Description;
-            project.ClientName = projectDTO.ClientName;
-            project.Status = (ProjectStatus)projectDTO.Status;
-            project.TeamId = projectDTO.TeamId;
-            project.DateStarted = projectDTO.DateStarted;
-            project.DateUpdated = projectDTO.DateUpdated;
-            project.DateCompleted = projectDTO.DateCompleted;
+            project = projectDTO.ToEntity();
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _repo.UpdateAsync(project);
+               
                 await _cache.RemoveAsync($"project:{id}");
 
                 response.Message = "Developer Updated Successfully";

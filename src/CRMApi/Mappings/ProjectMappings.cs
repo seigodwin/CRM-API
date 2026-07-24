@@ -17,4 +17,36 @@ namespace CRMApi.Extentions
             };
         }
     }
+
+        public static class ToDtoMaaping
+    {
+        public static FullProjectDTO ToDto(this Project entity)
+        {
+            return new FullProjectDTO
+            {
+                Title = entity.Title,
+                ClientName = entity.ClientName,
+                Description = entity.Description,
+                TeamTitle = entity.Team?.Title ?? "",
+                TeamId = entity.TeamId,
+                Status = entity.Status
+            };
+        }
+    }
+
+
+         public static class ToUpdateDtoMaaping
+    {
+        public static ProjectDTO ToUpdateDto(this Project entity)
+        {
+            return new ProjectDTO
+            {
+                Title = entity.Title,
+                ClientName = entity.ClientName,
+                Description = entity.Description,
+                TeamId = entity.TeamId,
+                Status = entity.Status
+            };
+        }
+    }
 }

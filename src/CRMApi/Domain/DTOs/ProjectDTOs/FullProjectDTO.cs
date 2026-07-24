@@ -12,7 +12,7 @@ namespace CRMApi.Domain.DTOs
         public DateTime? DateUpdated { get; set; }
         public DateTime? DateCompleted { get; set; }
         public ProjectStatus Status { get; set; } = ProjectStatus.Pending;
-        public FullTeamDTO? Team { get; set; }
+        public string TeamTitle { get; set; } = string.Empty;
         public int? TeamId { get; set; }
     }
 }

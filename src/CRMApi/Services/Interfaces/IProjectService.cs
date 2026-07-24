@@ -1,6 +1,5 @@
 ﻿
 using CRMApi.Domain.DTOs;
-using CRMApi.Domain.DTOs.ProjectDTOs;
 using CRMApi.Utility;
 using Microsoft.AspNetCore.JsonPatch;
 
@@ -12,8 +11,8 @@ namespace CRMApi.Services.Interfaces
         Task<ServiceResponse<FullProjectDTO>> GetProjectById(int id);
         Task<ServiceResponse<object>> DeleteProjectById(int id);
         Task<ServiceResponse<object>> DeleteTeam(int projectId, int teamId);
-        Task<ServiceResponse<object>> UpdateProjectById(int id, UpdateProjectRequestDTO projectDTO);
-        Task<ServiceResponse<object>> PatchProjectById(int id, JsonPatchDocument<UpdateProjectRequestDTO> patchData);
+        Task<ServiceResponse<object>> UpdateProjectById(int id, ProjectDTO projectDTO);
+        Task<ServiceResponse<object>> PatchProjectById(int id, JsonPatchDocument<ProjectDTO> patchData);
         Task<ServiceResponse<FullProjectDTO>> CreateProject(ProjectDTO projectDTO);
 
     }
