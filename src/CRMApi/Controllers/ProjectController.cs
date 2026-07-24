@@ -1,6 +1,5 @@
 ﻿using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
-using CRMApi.Domain.DTOs.ProjectDTOs;
 using CRMApi.Domain.Models;
 using CRMApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -50,7 +49,7 @@ namespace CRMApi.Controllers
 
     
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProject(int id, [FromBody] UpdateProjectRequestDTO NewProjectDTO)
+        public async Task<IActionResult> UpdateProject(int id, [FromBody] ProjectDTO NewProjectDTO)
         {
            if (NewProjectDTO is not null && ModelState.IsValid)
            {
@@ -63,7 +62,7 @@ namespace CRMApi.Controllers
         }
        
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PatchProjectById(int id, JsonPatchDocument<UpdateProjectRequestDTO> patchData)
+        public async Task<IActionResult> PatchProjectById(int id, JsonPatchDocument<ProjectDTO> patchData)
         {
           if (patchData is not null && ModelState.IsValid)
             {
