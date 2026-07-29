@@ -9,7 +9,9 @@ namespace CRMApi.Extentions
     {
         public static WebApplication UseApplication(this WebApplication app, IHostEnvironment environment)
         {
-            app.UseSerilogRequestLogging();
+            
+        app.UseExceptionHandler();
+         app.UseSerilogRequestLogging();
 
         app.MapOpenApi();
 

@@ -1,6 +1,7 @@
 using CRM_API.Options;
 using CRMApi.DbContexts;
 using CRMApi.Domain.Models;
+using CRMApi.Exceptions;
 using CRMApi.Options;
 using CRMApi.Services.Implimentations;
 using CRMApi.Services.Interfaces;
@@ -37,8 +38,10 @@ namespace CRMApi.Extentions
                 });
             });
 
+        services.AddProblemDetails();
+        services.AddExceptionHandler<GlobalExceptionHandler>();
 
-               // Register model services
+        // Register app services
         services.AddScoped<IDeveloperService, DeveloperService>();
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<IAuthService, AuthService>();

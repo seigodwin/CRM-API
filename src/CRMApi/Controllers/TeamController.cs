@@ -44,7 +44,6 @@ namespace CRMApi.Controllers
         }
 
 
-
         [HttpDelete("delete-developer/{TeamId}/{DeveloperId}")]
         public async Task<IActionResult> DeleteDeveloper(int TeamId, string DeveloperId)
         {
@@ -79,8 +78,6 @@ namespace CRMApi.Controllers
 
             return response.Success ? Ok(response) : NotFound(response);
         }
-
-
         
         [AllowAnonymous]
         [HttpGet("{id}")]
@@ -91,8 +88,6 @@ namespace CRMApi.Controllers
             return response.Success ? Ok(response) : NotFound(response); 
         }
 
-
-
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchTeamById(int id, JsonPatchDocument<CreateTeamDTO> patchData)
         {
@@ -100,7 +95,6 @@ namespace CRMApi.Controllers
 
             return response.Success ? NoContent() : BadRequest(response);
         }
-
 
 
         [HttpPut("{id}")] 
