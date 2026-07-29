@@ -2,7 +2,7 @@
 
 namespace CRMApi.Domain.DTOs
 {
-    public class TeamDTO
+    public class CreateTeamDTO
     {
         public required string Title { get; set; } 
         public required string Description { get; set; } 

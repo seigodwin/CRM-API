@@ -2,7 +2,7 @@
 
 namespace CRMApi.Domain.DTOs.DeveloperDTOs
 {
-    public class UpdateDevRequestDTO
+    public class CreateDeveloperDto
     {
         [MaxLength(50)]
         public string FirstName { get; set; } = string.Empty;
@@ -14,6 +14,6 @@ namespace CRMApi.Domain.DTOs.DeveloperDTOs
         [EmailAddress]
         public required string Email { get; set; } 
         public List<string> Stack { get; set; } = new List<string>();
-        public List<FullTeamDTO> Teams { get; set; } = new List<FullTeamDTO>();
+        public List<GetTeamDto> Teams { get; set; } = new List<GetTeamDto>();
     }
 }

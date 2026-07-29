@@ -19,9 +19,9 @@ namespace CRMApi.Services.Services
         private readonly AppDbContext _context = context;
         private readonly IDistributedRedisCacheService _cache = cache;
 
-        public async Task<ServiceResponse<FullProjectDTO>> CreateProject(ProjectDTO projectDTO)
+        public async Task<ServiceResponse<GetProjectDto>> CreateProject(ProjectDTO projectDTO)
         {
-            var response = new ServiceResponse<FullProjectDTO>();
+            var response = new ServiceResponse<GetProjectDto>();
 
             if (projectDTO is null) 
             {
@@ -36,7 +36,7 @@ namespace CRMApi.Services.Services
             {
                 await _repo.AddAsync(project);
               
-                response.Data = project.ToDto();
+                response.Data = project.ToGetDto();
 
                 response.Message = "Project Created successfully";
 
@@ -117,23 +117,21 @@ namespace CRMApi.Services.Services
             return response;
 
         }
-        public async Task<ServiceResponse<List<FullProjectDTO>>> GetAllProjects(int page = 1, int pageSize = 10)
+        public async Task<ServiceResponse<List<GetProjectDto>>> GetAllProjects(int page = 1, int pageSize = 10)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 1 : (pageSize > 30 ? 30 : pageSize);
             
-            var response = new ServiceResponse<List<FullProjectDTO>>();
+            var response = new ServiceResponse<List<GetProjectDto>>();
 
             var cacheKey = $"projects:page:{page}:pageSize:{pageSize}";
-            var cachedData = await _cache.GetAsync<List<FullProjectDTO>>(cacheKey);
+            var cachedData = await _cache.GetAsync<List<GetProjectDto>>(cacheKey);
             if(cachedData != null)
             {
                 response.Data = cachedData;
                 response.Message = "Projects retrieved successfully from cache.";
                 return response;
             }
-
-            var projectPerPageDTO = new List<FullProjectDTO>();
 
             var projects = await _repo.GetAllAsync(page, pageSize);
 
@@ -144,7 +142,7 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            response.Data = projects.Select(p => p.ToDto()).ToList();
+            response.Data = projects.Select(p => p.ToGetDto()).ToList();
 
             response.Message = "Projects retrieved successfully" +
                                $" Current Page: {page}" +
@@ -154,12 +152,12 @@ namespace CRMApi.Services.Services
             return response;
             }
 
-        public async Task<ServiceResponse<FullProjectDTO>> GetProjectById(int id)
+        public async Task<ServiceResponse<GetProjectDto>> GetProjectById(int id)
         {
-            var response = new ServiceResponse<FullProjectDTO>();
+            var response = new ServiceResponse<GetProjectDto>();
 
             var cacheKey = $"project:{id}";
-            var cachedData = await _cache.GetAsync<FullProjectDTO>(cacheKey);
+            var cachedData = await _cache.GetAsync<GetProjectDto>(cacheKey);
 
             if(cachedData != null)
             {
@@ -177,7 +175,7 @@ namespace CRMApi.Services.Services
                 return response; 
             }
 
-            response.Data = project.ToDto();
+            response.Data = project.ToGetDto();
             
             response.Message = "Project retrieved Successfully";
             

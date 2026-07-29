@@ -3,6 +3,7 @@ using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.DTOs.DeveloperDTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Mappings;
 using CRMApi.Repository;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
@@ -52,16 +53,16 @@ namespace CRMApi.Services.Services
             return response;
         }
 
-        public async Task<ServiceResponse<List<FullDeveloperDTO>>> GetAllDevelopers(int page = 1, int pageSize = 10)
+        public async Task<ServiceResponse<List<GetDeveloperDTO>>> GetAllDevelopers(int page = 1, int pageSize = 10)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 1 : (pageSize < 30 ? 30 : pageSize);
 
-            var response = new ServiceResponse<List<FullDeveloperDTO>>();
+            var response = new ServiceResponse<List<GetDeveloperDTO>>();
 
             var cacheKey = $"developers:page:{page}:pageSize:{pageSize}";
             
-            var cachedData = await _cache.GetAsync<List<FullDeveloperDTO>>(cacheKey);
+            var cachedData = await _cache.GetAsync<List<GetDeveloperDTO>>(cacheKey);
 
             if(cachedData != null)
             {
@@ -79,53 +80,22 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            var developersDTO = developers.Select(d => new FullDeveloperDTO
-            {
-                Id = d.Id,
-                FirstName = d.FirstName,
-                SecondName = d.LastName,
-                UserName = d.UserName ?? string.Empty,
-                Email = d.Email ?? string.Empty,
-                PhoneNumber = d.PhoneNumber ?? string.Empty,
-                Stack = d.Stack,
-                
-                Roles = _context.UserRoles
-                .Where(ur => ur.UserId == d.Id)
-                .Join(
-                    _context.Roles, 
-                    ur => ur.RoleId, 
-                    r => r.Id, 
-                    (ur, r) => r.Name
-                )
-                .Select(roleName => roleName ?? string.Empty) 
-                .ToList(),
-                
+            response.Data   = developers.Select(d => d.ToGetDto()).ToList();
 
-                Teams = d.Teams.Select(t => new FullTeamDTO
-                {
-                    Id = t.Id,
-                    Title = t.Title,
-                    Description = t.Description,
-                    TeamLeadId = t.TeamLeadId,
-                }).ToList(),
-
-            }).ToList(); 
-
-            response.Data   = developersDTO;
             response.Message = "Developers retrieved successfully " +
                                 $"Current Page: {page}" +
                                 $" PageSize: {pageSize}" ;
 
-            await _cache.SetAsync(cacheKey, developersDTO, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));   
+            await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));   
 
             return response;
         }
-        public async Task<ServiceResponse<FullDeveloperDTO>> GetDeveloperById(string id)
+        public async Task<ServiceResponse<GetDeveloperDTO>> GetDeveloperById(string id)
         {
-            var response = new ServiceResponse<FullDeveloperDTO>();
+            var response = new ServiceResponse<GetDeveloperDTO>();
 
             var cacheKey = $"developer:{id}";
-            var cachedData = await _cache.GetAsync<FullDeveloperDTO>(cacheKey);
+            var cachedData = await _cache.GetAsync<GetDeveloperDTO>(cacheKey);
 
             if(cachedData is not null)
             {
@@ -145,26 +115,7 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            response.Data = new FullDeveloperDTO
-            { 
-                Id = developer.Id,
-                FirstName = developer.FirstName,
-                SecondName = developer.LastName,
-                UserName = developer.UserName ?? string.Empty,
-                Email = developer.Email ?? string.Empty,
-                PhoneNumber = developer.PhoneNumber ?? string.Empty,
-                Stack = developer.Stack,
-                Roles = (await _employeeManager.GetRolesAsync(developer)).ToList() ?? new List<string>(),
-
-                Teams = developer.Teams.Select(t => new FullTeamDTO
-                {
-                    Id = t.Id,
-                    Title = t.Title,
-                    Description = t.Description,
-                    TeamLeadId = t.TeamLeadId ?? string.Empty,
-                }).ToList(),
-
-            };
+           response.Data = developer.ToGetDto();
 
             response.Message = "Developer retrieved Successfully";
             await _cache.SetAsync(cacheKey , response.Data, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));
@@ -172,7 +123,7 @@ namespace CRMApi.Services.Services
 
         }
 
-        public async Task<ServiceResponse<string>> PatchDeveloperById(string id, JsonPatchDocument<PatchDevRequestDTO> patchData)
+        public async Task<ServiceResponse<string>> PatchDeveloperById(string id, JsonPatchDocument<CreateDeveloperDto> patchData)
         {
             var response = new ServiceResponse<string>();
 
@@ -185,25 +136,15 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            var developerDTO = new PatchDevRequestDTO
-            {
-                FirstName = developer.FirstName,
-                LastName = developer.LastName,
-                UserName = developer.UserName ?? string.Empty,
-                Email = developer.Email ?? string.Empty,
-                Stack = developer.Stack,
-            };
+            var developerDTO = developer.ToPatchDto();
 
             patchData.ApplyTo(developerDTO);
-        
-            developer.FirstName = developerDTO.FirstName;
-            developer.LastName = developerDTO.LastName;
-            developer.Email = developerDTO.Email;
-            developer.Stack = developerDTO.Stack;
 
             try
             {
+                _context.Developers.Update(developer);
                 await _context.SaveChangesAsync();
+
                 await _cache.RemoveAsync($"developer:{id}");
 
                 response.Message = "Developer updated successfully";
@@ -217,7 +158,7 @@ namespace CRMApi.Services.Services
             return response;
         }
 
-        public async Task<ServiceResponse<string>> UpdateDeveloperById(string id, UpdateDevRequestDTO developerDTO)
+        public async Task<ServiceResponse<string>> UpdateDeveloperById(string id, CreateDeveloperDto developerDTO)
         {
             var response = new ServiceResponse<string>();
 
@@ -230,16 +171,12 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            developer.FirstName = developerDTO.FirstName;
-            developer.LastName = developerDTO.SecondName;
-            developer.PhoneNumber = developerDTO.PhoneNumber;
-            developer.Email = developerDTO.Email;
-            developer.Stack = developerDTO.Stack;
+            developer.Update(developerDTO);
 
             try
             {
                 await _context.SaveChangesAsync();
-                  await _cache.RemoveAsync($"developer:{id}");
+                await _cache.RemoveAsync($"developer:{id}");
                 response.Message = "Developer updated successfully";
             }
 
