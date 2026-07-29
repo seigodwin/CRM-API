@@ -3,6 +3,7 @@ using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.Models;
 using CRMApi.Extentions;
+using CRMApi.Mappings;
 using CRMApi.Repository;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;

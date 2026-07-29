@@ -18,7 +18,7 @@ namespace CRMApi.Mappings
         }
     }
 
-        public static class ToDtoMaaping
+    public static class ToDtoMaaping
     {
         public static FullProjectDTO ToDto(this Project entity)
         {
