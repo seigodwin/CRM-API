@@ -2,14 +2,14 @@
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.Models;
 
-namespace CRMApi.Extentions
-{
+namespace CRMApi.Mappings
+{       
     public static class ToEntityMaaping
-    {
+    {           
         public static Project ToEntity(this ProjectDTO dto)
         {
             return new Project
-            {
+            {           
                 Title = dto.Title,
                 ClientName = dto.ClientName,
                 Description = dto.Description,
@@ -36,7 +36,7 @@ namespace CRMApi.Extentions
 
 
          public static class ToUpdateDtoMaaping
-    {
+        {
         public static ProjectDTO ToUpdateDto(this Project entity)
         {
             return new ProjectDTO

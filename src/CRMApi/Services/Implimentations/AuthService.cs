@@ -612,7 +612,7 @@ namespace CRMApi.Services.Services
                 if (!changedPassword.Succeeded)
                 {
                     response.Success = false;
-                    response.Message = $"Failed to reset password: {changedPassword.Errors.FirstOrDefault()}";
+                    response.Message = $"Failed to reset password";
                 }
                 response.Message = "Password reset success";                
             }

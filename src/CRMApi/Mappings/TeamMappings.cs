@@ -2,18 +2,18 @@
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.Models;
 
-namespace CRMApi.Extentions
-{
-    public static class ToEntityMapping
-    {
-        public static Team ToEntity(this TeamDTO dto)
+namespace CRMApi.Mappings                           
+{           
+    public static class ToEntityMapping                                                    
+    {                                                           
+        public static Team ToEntity(this TeamDTO dto)                                                              
         {
-            return new Team
-            {
-                Title = dto.Title,
-                Description = dto.Description,
-                TeamLeadId = dto.TeamLeadId
-            };
+            return new Team                                                                    
+            {                                                                        
+                Title = dto.Title,                  
+                Description = dto.Description,                  
+                TeamLeadId = dto.TeamLeadId         
+            };          
         }
     }
 
@@ -21,13 +21,14 @@ namespace CRMApi.Extentions
     {
         public static FullTeamDTO ToTeamDto(this Team entity)
         {
-            return new FullTeamDTO
-            {
+            return new FullTeamDTO          
+            {           
                 Id = entity.Id,
                 Title = entity.Title,
-                Description = entity.Description,
+                Description = entity.Description,           
                 TeamLeadId = entity.TeamLeadId
             };
         }
     }
-}
+}   
+
