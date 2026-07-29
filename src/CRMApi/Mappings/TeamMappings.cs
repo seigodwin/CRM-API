@@ -12,8 +12,7 @@ namespace CRMApi.Mappings
             {                                                                        
                 Title = dto.Title,                  
                 Description = dto.Description,                  
-                TeamLeadId = dto.TeamLeadId,
-                         
+                TeamLeadId = dto.TeamLeadId,  
             };          
         }
 
@@ -32,6 +31,25 @@ namespace CRMApi.Mappings
             {
                 dto.TeamLeadName = $"{entity.TeamLead.FirstName} {entity.TeamLead.LastName}";
             }
+
+            return dto;
+        }
+
+        public static void Update(this Team entity, CreateTeamDTO dto)
+        { 
+            entity.Title = dto.Title;
+            entity.Description = dto.Description; 
+            entity.TeamLeadId = dto.TeamLeadId;
+        }
+
+         public static CreateTeamDTO ToPatchDto(this Team entity)
+        {
+            var dto = new CreateTeamDTO        
+            {           
+                Title = entity.Title,
+                Description = entity.Description,  
+                TeamLeadId = entity.TeamLeadId,
+            };
 
             return dto;
         }

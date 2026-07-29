@@ -13,6 +13,7 @@ using CRMApi.Services.Services;
 using CRM_API.Domain.DTos.AuthDtos;
 using CRMApi.Domain.DTOs.AuthDtos;
 using CRM_API.Domain.DTos;
+using CRMApi.Domain.DTOs.DeveloperDTOs;
 
 
 namespace CRMApi.Controllers
@@ -30,7 +31,7 @@ namespace CRMApi.Controllers
         }
         
         [HttpPost("register-developer")]
-        public async Task<IActionResult> RegisterDeveloper([FromBody] RegisterDeveloperRequestDto dto) 
+        public async Task<IActionResult> RegisterDeveloper([FromBody] CreateDeveloperDto dto) 
         {
             if (dto is not null && ModelState.IsValid)
             {

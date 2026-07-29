@@ -62,7 +62,7 @@ namespace CRMApi.Controllers
  
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDeveloper(string id, [FromBody] UpdateDevRequestDTO UpdatedDeveloperDTO)
+        public async Task<IActionResult> UpdateDeveloper(string id, [FromBody] CreateDeveloperDto UpdatedDeveloperDTO)
         {
             if (UpdatedDeveloperDTO is null)
             {
@@ -86,7 +86,7 @@ namespace CRMApi.Controllers
 
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PatchDeveloperById (string id, JsonPatchDocument<PatchDevRequestDTO> patchData)
+        public async Task<IActionResult> PatchDeveloperById (string id, JsonPatchDocument<CreateDeveloperDto> patchData)
         {
             if (patchData is null)
             {

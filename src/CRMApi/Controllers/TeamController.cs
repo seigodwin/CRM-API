@@ -36,7 +36,7 @@ namespace CRMApi.Controllers
 
 
         [HttpPost]
-        public async Task<IActionResult> CreateTeam([FromBody] TeamDTO teamDTO)
+        public async Task<IActionResult> CreateTeam([FromBody] CreateTeamDTO teamDTO)
         {
             var response = await _teamService.CreateTeam(teamDTO);
 
@@ -94,7 +94,7 @@ namespace CRMApi.Controllers
 
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PatchTeamById(int id, JsonPatchDocument<TeamDTO> patchData)
+        public async Task<IActionResult> PatchTeamById(int id, JsonPatchDocument<CreateTeamDTO> patchData)
         {
             var response = await _teamService.PatchTeamById(id, patchData);
 
@@ -104,7 +104,7 @@ namespace CRMApi.Controllers
 
 
         [HttpPut("{id}")] 
-        public async Task<IActionResult> UpdateTeamById(int id, TeamDTO teamDTO)    
+        public async Task<IActionResult> UpdateTeamById(int id, CreateTeamDTO teamDTO)    
         {
             var response = await _teamService.UpdateTeamById(id, teamDTO);
 

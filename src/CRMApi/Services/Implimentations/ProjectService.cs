@@ -203,7 +203,7 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            var dto = project.ToUpdateDto();
+            var dto = project.ToPatchDto();
 
             patchData.ApplyTo(dto);
 
@@ -245,12 +245,10 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            project = projectDTO.ToEntity();
+            project.Update(projectDTO);
 
             try
             {
-                await _repo.UpdateAsync(project);
-               
                 await _cache.RemoveAsync($"project:{id}");
 
                 response.Message = "Developer Updated Successfully";

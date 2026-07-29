@@ -2,6 +2,7 @@
 using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Mappings;
 using CRMApi.Repository;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
@@ -116,9 +117,9 @@ namespace CRMApi.Services.ModelServices
             return response;
         }
 
-        public async Task<ServiceResponse<FullTeamDTO>> CreateTeam(TeamDTO teamDTO)
+        public async Task<ServiceResponse<GetTeamDto>> CreateTeam(CreateTeamDTO teamDTO)
         {
-            var response = new ServiceResponse<FullTeamDTO>();
+            var response = new ServiceResponse<GetTeamDto>();
 
             if (teamDTO is null)
             {
@@ -150,33 +151,8 @@ namespace CRMApi.Services.ModelServices
                 await _context.Teams.AddAsync(team);
                 await _context.SaveChangesAsync();
 
-                var TeamDTO = new FullTeamDTO
-                {
-                    Id = team.Id,
-                    Title = team.Title,
-                    Description = team.Description,
-                    TeamLeadId = team.TeamLeadId,
-
-                    Projects = team.Projects.Select(p => new FullProjectDTO
-                    {
-                        Id = p.Id,
-                        Title = p.Title,
-                        Description = p.Description,
-                        ClientName = p.ClientName,
-
-                    }).ToList(),
-
-                    Developers = team.Developers.Select(d => new FullDeveloperDTO
-                    {
-                        Id = d.Id,
-                        UserName = d.UserName ?? string.Empty,
-                        PhoneNumber = d.PhoneNumber ?? string.Empty,
-                        Email = d.Email ?? string.Empty,
-                    }).ToList(),
-                };
-
                 response.Message = "Team created Successfully";
-                response.Data = TeamDTO;
+                response.Data = team.ToGetDto();
             }
 
             catch(DbUpdateException dbEx)
@@ -320,14 +296,14 @@ namespace CRMApi.Services.ModelServices
         }
 
 
-        public async Task<ServiceResponse<List<FullTeamDTO>>> GetAllTeams(int Page = 1, int PageSize = 10)
+        public async Task<ServiceResponse<List<GetTeamDto>>> GetAllTeams(int Page = 1, int PageSize = 10)
         {
             Page = Page < 1 ? 1 : Page;
             PageSize = PageSize < 1 ? 1 : (PageSize > 30 ? 30 : PageSize);
 
-            var response = new ServiceResponse<List<FullTeamDTO>>();
+            var response = new ServiceResponse<List<GetTeamDto>>();
             var cacheKey = $"teams:page:{Page}:pageSize:{PageSize}";
-            var cachedData = await _cache.GetAsync<List<FullTeamDTO>>(cacheKey);
+            var cachedData = await _cache.GetAsync<List<GetTeamDto>>(cacheKey);
 
             if(cachedData != null)
             {
@@ -349,64 +325,25 @@ namespace CRMApi.Services.ModelServices
                 response.Success = false;
                 return response;
             }
- 
-            var teamsPerPageDTO = new List<FullTeamDTO>();
-            
-            foreach(var team in teams)
-            {
-                teamsPerPageDTO.Add(new FullTeamDTO
-                {
-                    Id = team.Id,
-                    Title = team.Title,
-                    Description = team.Description,
 
-                    Developers = team.Developers.Count == 0 ? new List<FullDeveloperDTO>() : team.Developers.Select(d => new FullDeveloperDTO
-                    {
-                        Id = d.Id,
-                        FirstName = d.FirstName,
-                        SecondName = d.LastName,
-                        UserName = d.UserName ?? string.Empty,
-                        PhoneNumber = d.PhoneNumber ?? string.Empty,
-                        Email = d.Email ?? string.Empty,
-                    }).ToList(),
-
-                    Projects = team.Projects.Count == 0 ? new List<FullProjectDTO>() : team.Projects.Select(p => new FullProjectDTO
-                    {
-                        Id = p.Id,
-                        Title = p.Title,
-                        Description = p.Description,
-                        ClientName = p.ClientName,
-
-                    }).ToList(),
-
-                    TeamLead = team.TeamLead is null ? null : new FullDeveloperDTO
-                    {
-                        Id = team.TeamLead.Id,
-                        UserName = team.TeamLead.UserName ?? string.Empty,
-                        Email = team.TeamLead.Email ?? string.Empty,
-                        PhoneNumber = team.TeamLead.PhoneNumber ?? string.Empty,
-                    },
-
-                });
-            }
-
-            response.Message = "Developers retrieved successfully +" +
+                response.Message = "Developers retrieved successfully +" +
                                 $"Current Page: {Page}" +
                                 $"PageSize: {PageSize}";
                                 
-            response.Data = teamsPerPageDTO;
+            response.Data = teams.Select( t => t.ToGetDto()).ToList();
+
             await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
             return response;
 
         }
 
  
-        public async Task<ServiceResponse<FullTeamDTO>> GetTeamById(int id)
+        public async Task<ServiceResponse<GetTeamDto>> GetTeamById(int id)
         {
-            var response = new ServiceResponse<FullTeamDTO>();
+            var response = new ServiceResponse<GetTeamDto>();
 
             var cacheKey = $"team:{id}";
-            var cachedData = await _cache.GetAsync<FullTeamDTO>(cacheKey);
+            var cachedData = await _cache.GetAsync<GetTeamDto>(cacheKey);
 
             if(cachedData is not null)
             {
@@ -428,40 +365,7 @@ namespace CRMApi.Services.ModelServices
                 return response;
             }
 
-            var teamDTO = new FullTeamDTO
-            {
-                Title = team.Title,  
-                Description = team.Description,
-
-                Projects = team.Projects.Count <= 0 ? new List<FullProjectDTO>() : team.Projects.Select(p => new FullProjectDTO
-                {
-                    Id = p.Id,
-                    Title = p.Title,
-                    Description = p.Description,
-                    ClientName = p.ClientName
-                }).ToList(),
-
-                Developers = team.Developers.Count <= 0 ? new List<FullDeveloperDTO>() : team.Developers.Select(d => new FullDeveloperDTO  
-                {
-                    Id = d.Id,
-                    FirstName = d.FirstName,
-                    SecondName = d.LastName,
-                    UserName = d.UserName ?? string.Empty,
-                    PhoneNumber = d.PhoneNumber ?? string.Empty ,
-                    Email = d.Email ?? string.Empty,
-                }).ToList(),
-                   
-                TeamLead = team.TeamLead is null ? null : new FullDeveloperDTO
-                {
-                    Id = team.TeamLead.Id,
-                    FirstName = team.TeamLead.FirstName,
-                    SecondName = team.TeamLead.LastName,  
-                    UserName = team.TeamLead.UserName ?? string.Empty,
-                    PhoneNumber = team.TeamLead.PhoneNumber ?? string.Empty,       
-                    Email = team.TeamLead.Email ?? string.Empty
-                },
-    
-            };
+            response.Data = team.ToGetDto();
                
             response.Message = "Team retrieved successfully";
             
@@ -469,7 +373,7 @@ namespace CRMApi.Services.ModelServices
             return response;
         }
 
-        public async Task<ServiceResponse<object>> PatchTeamById(int id, JsonPatchDocument<TeamDTO> patchData)
+        public async Task<ServiceResponse<object>> PatchTeamById(int id, JsonPatchDocument<CreateTeamDTO> patchData)
         {
             var response = new ServiceResponse<object>();
             var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == id);
@@ -481,21 +385,13 @@ namespace CRMApi.Services.ModelServices
                 return response;
             }
 
-            var teamDTO = new TeamDTO
-            {
-                Title = team.Title,
-                Description = team.Description,
-                TeamLeadId = team.TeamLeadId,
-            };
+            var teamDTO = team.ToPatchDto();
 
             patchData.ApplyTo(teamDTO);
-            
-            team.Title = teamDTO.Title;
-            team.Description = teamDTO.Description;
-            team.TeamLeadId = teamDTO.TeamLeadId;
-
+        
             try
             {
+                _context.Teams.Update(team);
                await _context.SaveChangesAsync();
                response.Message = "Team patched successfully";
             }
@@ -507,7 +403,7 @@ namespace CRMApi.Services.ModelServices
             return response;
         }
 
-        public async Task<ServiceResponse<object>> UpdateTeamById(int id, TeamDTO teamDTO)
+        public async Task<ServiceResponse<object>> UpdateTeamById(int id, CreateTeamDTO teamDTO)
         {
             var response = new ServiceResponse<object>();
             var team = await _context.Teams.FirstOrDefaultAsync(t => t.Id == id);
@@ -521,9 +417,8 @@ namespace CRMApi.Services.ModelServices
 
             try
             {
-                team.Title = teamDTO.Title;
-                team.Description = teamDTO.Description;
-                team.TeamLeadId = teamDTO.TeamLeadId;
+                team.Update(teamDTO);
+                await _context.SaveChangesAsync();
 
                 response.Message = "Team Updated Successfully";
             }

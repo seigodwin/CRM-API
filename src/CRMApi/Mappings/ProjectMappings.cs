@@ -17,7 +17,7 @@ namespace CRMApi.Mappings
             };
         }
 
-          public static ProjectDTO ToUpdateDto(this Project entity)
+          public static ProjectDTO ToPatchDto(this Project entity)
         {
             return new ProjectDTO
             {
@@ -27,6 +27,16 @@ namespace CRMApi.Mappings
                 TeamId = entity.TeamId,
                 Status = entity.Status
             };
+        }
+
+        
+        public static void Update(this Project entity , ProjectDTO dto)
+        {
+            entity.Title = entity.Title;
+            entity.ClientName = entity.ClientName;
+            entity.Description = entity.Description;
+            entity.TeamId = entity.TeamId;
+            entity.Status = entity.Status;
         }
 
 

@@ -12,7 +12,7 @@ namespace CRMApi.Services.Interfaces
     public interface IAuthService
     {
         Task<ServiceResponse<string>> RegisterAdminAsync(RegisterAdminRequestDto adminDTO);
-        Task<ServiceResponse<CreateDeveloperDto>> RegisterDeveloperAsync(CreateDeveloperDto userDTO);
+        Task<ServiceResponse<GetDeveloperDTO>> RegisterDeveloperAsync(CreateDeveloperDto userDTO);
         Task<ServiceResponse<AuthenticatedUsertDto>> LoginAsync(LoginRequestDto loginDto);
         Task<ServiceResponse<string>> ForgotPasswordAsync(ForgotPasswordRequestDto model); 
         Task<ServiceResponse<string>> ResetPasswordAsync(ResetPasswordRequestDto model);

@@ -3,8 +3,11 @@ using CRM_API.Domain.DTos;
 using CRM_API.Domain.DTos.AuthDtos;
 using CRM_API.Domain.DTOs.AuthDtos;
 using CRMApi.DbContexts;
+using CRMApi.Domain.DTOs;
 using CRMApi.Domain.DTOs.AuthDtos;
+using CRMApi.Domain.DTOs.DeveloperDTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Mappings;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
 using CRMApi.Utility.Interfaces;
@@ -442,9 +445,9 @@ namespace CRMApi.Services.Services
             return response;
         }
 
-        public async Task<ServiceResponse<RegisterDeveloperResponseDto>> RegisterDeveloperAsync(RegisterDeveloperRequestDto userDTO)
+        public async Task<ServiceResponse<GetDeveloperDTO>> RegisterDeveloperAsync(CreateDeveloperDto userDTO)
         {
-            var response = new ServiceResponse<RegisterDeveloperResponseDto>();
+            var response = new ServiceResponse<GetDeveloperDTO>();
             if(userDTO is null)
             {
                 response.Success = false;
@@ -461,16 +464,8 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            var developer = new Developer
-            {
-                FirstName = userDTO.FirstName,
-                LastName = userDTO.LastName,
-                Email = userDTO.Email,
-                UserName = userDTO.UserName,
-                PhoneNumber = userDTO.PhoneNumber,
-                Stack = userDTO.Stack
-            };
-
+            var developer = userDTO.ToEntity();
+           
             try
             {
                 var userCreated = await _userManager.CreateAsync(developer,userDTO.Password);
@@ -484,16 +479,7 @@ namespace CRMApi.Services.Services
                     return response;
                 }
                 
-                response.Data = new RegisterDeveloperResponseDto
-                {
-                    Id = developer.Id,
-                    FirstName = developer.FirstName,
-                    LastName = developer.LastName,
-                    UserName = developer.UserName,
-                    Email = developer.Email,
-                    PhoneNumber = developer.PhoneNumber,
-                    Stack = developer.Stack
-                };
+                response.Data = developer.ToGetDto();
 
                 response.Message = "User created successfully";
 
@@ -546,7 +532,7 @@ namespace CRMApi.Services.Services
                 response.Message = $"Failed to register new user: {ex.Message}";
             }
 
-            await _eMailService.WelcomeEmailAsync(developer.Email, developer.UserName);
+            await _eMailService.WelcomeEmailAsync(developer.Email!, developer.UserName!);
             
             return response;
         }

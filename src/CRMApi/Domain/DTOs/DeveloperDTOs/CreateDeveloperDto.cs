@@ -13,7 +13,9 @@ namespace CRMApi.Domain.DTOs.DeveloperDTOs
         public string? PhoneNumber { get; set; }
         [EmailAddress]
         public required string Email { get; set; } 
+        public string Password {get ; set;} = string.Empty;
         public List<string> Stack { get; set; } = new List<string>();
+        public List<string> Roles { get; set; } = new List<string>();
         public List<GetTeamDto> Teams { get; set; } = new List<GetTeamDto>();
     }
 }
