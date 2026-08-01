@@ -7,6 +7,7 @@ using CRMApi.Domain.DTOs;
 using CRMApi.Domain.DTOs.AuthDtos;
 using CRMApi.Domain.DTOs.DeveloperDTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Exceptions.Types;
 using CRMApi.Mappings;
 using CRMApi.Services.Interfaces;
 using CRMApi.Utility;
@@ -25,10 +26,11 @@ namespace CRMApi.Services.Services
         private readonly ITokenService _tokenService;
         private readonly IRateLimitService _rateLimitService;
         private readonly IEmailService _eMailService;
+        private readonly ILogger<AuthService> _logger;
 
         public AuthService(AppDbContext context,UserManager<ApplicationUser> userManager, 
         RoleManager<IdentityRole> roleManager, IRateLimitService rateLimitService,
-        ITokenService tokenService, IEmailService emailService)
+        ITokenService tokenService, IEmailService emailService , ILogger<AuthService> logger)
         {
             _rateLimitService = rateLimitService;
             _userManager = userManager;
@@ -36,6 +38,7 @@ namespace CRMApi.Services.Services
             _context = context;
             _tokenService = tokenService;
             _eMailService = emailService;
+            _logger = logger;
         }
 
         public async Task<ServiceResponse<string>> AssignRolesAsync(AssignRoleRequestDto model)
@@ -51,9 +54,7 @@ namespace CRMApi.Services.Services
             var user = await _userManager.FindByEmailAsync(model.Email);
             if(user is null)
             {
-                response.Message = "User not found";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("User not found.");
             }
 
             if (model.Roles.Any())
@@ -70,10 +71,7 @@ namespace CRMApi.Services.Services
                     }
 
                     var rolesToAdd = cleanRoles.Except(await _userManager.GetRolesAsync(user)).ToList();
-
-                try
-                {
-                      var rolesResults = await _userManager.AddToRolesAsync(user,cleanRoles);
+                    var rolesResults = await _userManager.AddToRolesAsync(user,cleanRoles);
 
                     if (!rolesResults.Succeeded)
                     {
@@ -84,12 +82,6 @@ namespace CRMApi.Services.Services
                     }
                     
                     response.Message = "Roles assign successfully";
-                }
-                catch(Exception ex)
-                {
-                    response.Success = false;
-                    response.Message = $"Failed to assign roles: {ex.Message}";
-                }
             }
               return response;
         }   
@@ -103,13 +95,13 @@ namespace CRMApi.Services.Services
                 response.Message = "Provide valid data to change password";
                 return response;
             }
+
             if(model.NewPassword != model.ConFirmNewPassword)
             {
                 response.Success = false;
                 response.Message = "New password does not match";
                 return response;
             }
-
             
             var key = $"change-password{model.Email}";
 
@@ -117,40 +109,25 @@ namespace CRMApi.Services.Services
 
             if (blocked) 
             {
-                response.Success = false; 
-                response.Message = "Too many attempts. Try again after 15 minutes";
-                return response; 
+                throw new AuthenticationException("Too many attempts. Try again after 15 minutes");
             }  
 
             var user = await _userManager.FindByEmailAsync(model.Email);
 
             if(user is null)
             {
-                response.Success = false;
-                response.Message = "If a user exists, a change password link has been sent";
-                return response;
+                throw new NotFoundException("If a user exists, a change password link has been sent");
             }
 
-            try
-            {
                 var results = await _userManager
                 .ChangePasswordAsync(user,model.CurrentPassword,model.NewPassword);
 
                 if (!results.Succeeded)
                 {
-                    response.Message = string.Join(Environment.NewLine,
-                    results.Errors.Select(e => e.Description));
-                    response.Success = false;
-                    return response;
+                    throw new BadRequestException(string.Join(Environment.NewLine,
+                    results.Errors.Select( e => e.Description)));
                 }
                 response.Message = "Password change successfully";
-            }
-
-            catch(Exception ex)
-            {
-                response.Success = false;
-                response.Message = $"Failed to change password: {ex.Message}";
-            }
  
             return response;
         }
@@ -168,9 +145,7 @@ namespace CRMApi.Services.Services
             var user = await _userManager.FindByEmailAsync(model.Email);
             if(user is null)
             {
-                response.Success = false;
-                response.Message = "User not found";
-                return response;
+               throw new NotFoundException("User not found.");
             }
 
             try
@@ -178,18 +153,14 @@ namespace CRMApi.Services.Services
                 var results = await _userManager.ConfirmEmailAsync(user,model.Token);
                 if (!results.Succeeded)
                 {
-                    response.Success = false;
-                    response.Message = string.Join(Environment.NewLine,
-                    results.Errors.Select( e => e.Description));
-                    return response;
+                    throw new ValidationsException(results.Errors.Select(e => e.Description));
                 }
                 response.Message = "Email Confirmed successfully";
             }
 
             catch(Exception ex)
             {
-                response.Success = false;
-                response.Message = $"Failed to verify email: {ex.Message}";
+                throw new BadRequestException($"Failed to verify email: {ex.Message}");
             }
             return response;
         }
@@ -217,9 +188,9 @@ namespace CRMApi.Services.Services
             }
             catch (Exception ex)
             {
-                response.Success = false;
-                response.Message = $"Failed to create role: {ex.Message}";
+                throw new BadRequestException($"Failed to create role: {ex.Message}");
             }
+
             return response;
         }
 
@@ -253,26 +224,23 @@ namespace CRMApi.Services.Services
                 response.Message = "Too many attempts. Try again after 15 minutes";
                 return response; 
             }  
-
-            var token = string.Empty;
-            try
-            {
-                token = await _userManager.GeneratePasswordResetTokenAsync(user);
+    
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 if(!string.IsNullOrWhiteSpace(token))
                 {
                     response.Data = token;
                     response.Message = "Password reset token generated";
-
-                    
                 }
+
+            try
+            {
+                await _eMailService.ResetPasswordRequestEmailAsync(user.Email!, user.UserName!, token);
             }
+
             catch(Exception ex)
             {
-                response.Success = false;
-                response.Message = $"Failed to generate password reset token: {ex.Message}";
+                _logger.LogError(ex, "Failed to send password reset email to {Email}", user.Email);
             }
-
-            await _eMailService.ResetPasswordRequestEmailAsync(user.Email!, user.UserName!, token);
 
             return response;
         }
@@ -292,11 +260,8 @@ namespace CRMApi.Services.Services
 
             if(user is null)
             {
-                response.Message = "User not found";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("Incorrect email or password");
             }
-
             
             var key = $"login:{loginDto.Email}";
 
@@ -304,15 +269,11 @@ namespace CRMApi.Services.Services
 
             if (blocked) 
             {
-                response.Success = false; 
-                response.Message = "Too many attempts. Try again after a minute";
-                return response; 
+                throw new AuthenticationException("Too many attempts. Try again after 1 minute");
             }  
            
            if(await _userManager.CheckPasswordAsync(user, loginDto.Password))
             {
-                try
-                {
                     var tokens = await _tokenService.GenerateTokenPairAsync(user);
                     response.Message = "Login successful";
                     response.Data = new AuthenticatedUsertDto
@@ -323,19 +284,14 @@ namespace CRMApi.Services.Services
                         RefreshToken = tokens.RefreshToken,
                         AccessTokenExpiration = tokens.AccessTokenExpiration
                     };
-                }
-                catch(Exception ex)
-                {
-                    response.Success = false;
-                    response.Message = $"Failed to generate token:{ex.Message}";
-                }
+    
             }
 
             else
             {
-                response.Message = "Incorrect email or password";
-                response.Success = false;
+                throw new AuthenticationException("Incorrect email or password");
             }
+
             return response;
         }
 
@@ -353,10 +309,9 @@ namespace CRMApi.Services.Services
 
             if(result is null)
             {
-                response.Success = false;
-                response.Message = "Invalid token refresh request";
-                return response;
+                throw new AuthenticationException("Invalid token or refresh token");
             }
+            
             response.Data = result;
             response.Message = "Token refreshed successfully";
             return response;

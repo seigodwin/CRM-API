@@ -33,4 +33,13 @@ namespace CRMApi.Exceptions.Types
             
         }
     }
+
+    public class ValidationsException : Exception
+    {
+        IReadOnlyList<string> Messages { get; }
+        public ValidationsException(IEnumerable<string> messages) : base ("One or more validation errors occurred.")
+        {
+            Messages = messages.ToList();
+        }
+    }
 }

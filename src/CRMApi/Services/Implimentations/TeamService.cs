@@ -2,6 +2,7 @@
 using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Exceptions.Types;
 using CRMApi.Mappings;
 using CRMApi.Repository;
 using CRMApi.Services.Interfaces;
@@ -12,11 +13,13 @@ using Microsoft.EntityFrameworkCore;
 namespace CRMApi.Services.ModelServices
 {
     public class TeamService(AppDbContext context, 
-    IBaseRepository<Team> repo, IDistributedRedisCacheService cache) : ITeamService
+    IBaseRepository<Team> repo, IDistributedRedisCacheService cache,
+    ILogger<TeamService> logger) : ITeamService
     {
         private readonly AppDbContext _context = context;
         private readonly IBaseRepository<Team> _repo = repo;
         private readonly IDistributedRedisCacheService _cache = cache;
+        private readonly ILogger<TeamService> _logger = logger;
 
         public async Task<ServiceResponse<object>> AssignDeveloperToTeam(string DeveloperId, int TeamId)
         {
@@ -27,42 +30,28 @@ namespace CRMApi.Services.ModelServices
 
             if (team is null)
             {
-                response.Message = $"Team not found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException($"Team not found!");
             }
 
             var developer = await _context.Developers.FirstOrDefaultAsync(d => d.Id == DeveloperId);
 
             if (developer is null)
             {
-                response.Message = $"Developer not found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException($"Developer not found!");
             }
 
             if (team.Developers.Count is not 0)
             {
                 if (team.Developers.Any(d => d.Id == DeveloperId))
                 {
-                    response.Message = $"This developer is already a member of this Team";
-                    response.Success = false;
-                    return response;
+                    throw new ConflictException($"Developer exists in Team  already");
                 }
             }
 
-            try
-            {
-                team.Developers.Add(developer);
-                await  _context.SaveChangesAsync();
-                response.Message = "Developer added to the Team successfully";
-            }
-
-            catch (DbUpdateException dbEx)
-            {
-                response.Message = $"A database error occured: {dbEx.Message}";
-                response.Success = false;
-            }
+             team.Developers.Add(developer);
+             await  _context.SaveChangesAsync();
+          
+            response.Message = "Developer added to the Team successfully";
 
             return response;
         }
@@ -77,43 +66,28 @@ namespace CRMApi.Services.ModelServices
 
             if (team is null)
             {
-                response.Message = $"Team with Id {TeamId} not found!";
-                response.Success = false;
-                return response;
+               throw new NotFoundException($"Team not found!"); 
             }
 
             var project = await _context.Projects.FirstOrDefaultAsync(d => d.Id == ProjectId);
 
             if (project is null)
             {
-                response.Message = $"Project with Id {ProjectId} not found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException($"Project not found!");
             }
 
             if (team.Projects is not null && team.Projects.Count is not 0)
             {
                 if (team.Projects.Any(p => p.Id == ProjectId))
                 {
-                    response.Message = $"Project with Id {ProjectId} exists in Team with Id {TeamId} already";
-                    response.Success = false;
-                    return response;
+                    throw new ConflictException($"Project exists in Team already");
                 }
             }
 
-            try
-            {
-                team.Projects?.Add(project);
-                await _context.SaveChangesAsync();
-                response.Message = "Project assigned to the Team successfully";
-            }
-
-            catch (DbUpdateException dbEx)
-            {
-                response.Message = $"A database error occured: {dbEx.Message}";
-                response.Success = false;
-            }
-
+            team.Projects?.Add(project);
+            await _context.SaveChangesAsync();
+            response.Message = "Project assigned to the Team successfully";
+            
             return response;
         }
 
@@ -133,33 +107,16 @@ namespace CRMApi.Services.ModelServices
 
             if (teamLead is null)
             {
-                response.Success = false;
-                response.Message = "Team lead not found";
-                return response;
+               throw new NotFoundException($"Team Lead not found!");
             }
 
-            var team = new Team
-            {
-                Title = teamDTO.Title,
-                Description = teamDTO.Description,
-                TeamLeadId = teamLead.Id,
-                TeamLead = teamLead
-            };
+            var team = teamDTO.ToEntity();
 
-            try
-            {
                 await _context.Teams.AddAsync(team);
                 await _context.SaveChangesAsync();
 
                 response.Message = "Team created Successfully";
                 response.Data = team.ToGetDto();
-            }
-
-            catch(DbUpdateException dbEx)
-            {
-                response.Message = $"A database error occured: {dbEx.Message}";
-                response.Success = false;
-            }
 
             return response;
         }
@@ -174,9 +131,7 @@ namespace CRMApi.Services.ModelServices
 
             if (team is null)
             {
-                response.Message = $"Team with Id {TeamId} not found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException($"Team not found!");
             }
 
             if (team.Developers is not null) 
@@ -189,30 +144,20 @@ namespace CRMApi.Services.ModelServices
                 {
                     team.Developers.Remove(developer);
 
-                    try
-                    {
+
                         await _context.SaveChangesAsync();
                         response.Message = "Developer deleted successfully";
-                    }
-
-                    catch (DbUpdateException dbEx)
-                    {
-                        response.Message = $"A database error occured: {dbEx.Message}";
-                        response.Success = false;
-                    }
                 }
 
                 else
                 {
-                    response.Message = $"This developer is not a member of this Team";
-                    response.Success = false;
+                    throw new NotFoundException($"Developer is not found in Team");
                 }
             }
 
             else
             {
-                response.Message = $"No Developer has been assigned to this Team";
-                response.Success = false;
+                throw new NotFoundException($"No Developer has been assigned to this Team");
             }
 
                 return response; 
@@ -227,9 +172,7 @@ namespace CRMApi.Services.ModelServices
 
             if (team is null)
             {
-                response.Message = $"Team with Id {TeamId} not found!";  
-                response.Success = false;
-                return response;
+                throw new NotFoundException($"Team not found!");
             }
             
             if (team.Projects is not null)
@@ -255,16 +198,15 @@ namespace CRMApi.Services.ModelServices
 
                 else
                 {
-                    response.Message = $"Project is not assigned to this Team";
-                    response.Success = false;
+                    throw new NotFoundException($"Project is not assigned to this Team");
                 }
             }
             else
             {
-                response.Message = $"No project has been assigned to this Team";
-                response.Success = false;
+                throw new NotFoundException($"No project has been assigned to this Team");
             }
-                return response;
+            
+            return response;
         }
 
 
@@ -275,22 +217,11 @@ namespace CRMApi.Services.ModelServices
 
             if(team is null)
             {
-                response.Message = $"Team not found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException($"Team not found!");
             }
 
-            try
-            {
                 await _repo.DeleteAsync(team);
                 response.Message = "Team deleted successfull";
-            }
-
-            catch (DbUpdateException dbEx)
-            {
-                response.Message = $"A database error occured{dbEx.Message}";
-                response.Success = false;
-            }
 
             return response;
         }
@@ -321,18 +252,24 @@ namespace CRMApi.Services.ModelServices
                                             .ToListAsync();
             if (teams.Count is 0)
             {
-                response.Message = "No records found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("No teams found.");
             }
 
-                response.Message = "Developers retrieved successfully +" +
+            response.Message = "Developers retrieved successfully +" +
                                 $"Current Page: {Page}" +
                                 $"PageSize: {PageSize}";
                                 
             response.Data = teams.Select( t => t.ToGetDto()).ToList();
 
-            await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
+            try
+            {
+                await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to cache teams data. {CacheKey}", cacheKey);
+            }
+
             return response;
 
         }
@@ -360,16 +297,22 @@ namespace CRMApi.Services.ModelServices
 
             if (team is null)
             {
-                response.Message = $"Team not found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("Team not found!");
             }
 
             response.Data = team.ToGetDto();
                
             response.Message = "Team retrieved successfully";
-            
-            await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
+
+            try
+            {
+                await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to cache team data. {CacheKey}", cacheKey);
+            }
+
             return response;
         }
 
@@ -389,17 +332,10 @@ namespace CRMApi.Services.ModelServices
 
             patchData.ApplyTo(teamDTO);
         
-            try
-            {
                 _context.Teams.Update(team);
                await _context.SaveChangesAsync();
                response.Message = "Team patched successfully";
-            }
-
-            catch(DbUpdateException dbEx)
-            {
-                response.Message = $"A database error occured: {dbEx.Message}";
-            }
+            
             return response;
         }
 
@@ -410,28 +346,17 @@ namespace CRMApi.Services.ModelServices
 
             if (team is null)
             {
-                response.Message = $"Team not found!";
-                response.Success = false;
-                return response;
+               throw new NotFoundException($"Team not found!");
             }
 
-            try
-            {
                 team.Update(teamDTO);
                 await _context.SaveChangesAsync();
 
-                response.Message = "Team Updated Successfully";
-            }
-
-            catch(DbUpdateException dbEx)
-            {
-                response.Message = $"Database error occured: {dbEx.Message}";
-                response.Success = false;
-            }
+              response.Message = "Team Updated Successfully";
+            
              
             return response;
         }
 
-        
     }
 }

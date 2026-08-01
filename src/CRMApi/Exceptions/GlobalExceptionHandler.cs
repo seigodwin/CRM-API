@@ -53,6 +53,14 @@ namespace CRMApi.Exceptions
                     Detail = exception.Message
                 },
 
+                ValidationsException => new ValidationProblemDetails
+                {
+                    Type = "about:blank",
+                    Title = "Validation Error",
+                    Status = StatusCodes.Status400BadRequest,
+                    Detail = exception.Message,
+                },
+
                 _ => new ProblemDetails
                 {
                     Type = "about:blank",

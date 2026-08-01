@@ -3,6 +3,7 @@ using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.DTOs.DeveloperDTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Exceptions.Types;
 using CRMApi.Mappings;
 using CRMApi.Repository;
 using CRMApi.Services.Interfaces;
@@ -15,11 +16,12 @@ using Microsoft.EntityFrameworkCore;
 namespace CRMApi.Services.Services
 {
     public class DeveloperService(IBaseRepository<Developer> repo, AppDbContext context,
-    IDistributedRedisCacheService cache, UserManager<ApplicationUser> employeeManager) : IDeveloperService
+    IDistributedRedisCacheService cache, ILogger<DeveloperService> logger, UserManager<ApplicationUser> employeeManager) : IDeveloperService
     {
         private readonly IBaseRepository<Developer> _repo = repo;
         private readonly AppDbContext _context = context;
         private readonly IDistributedRedisCacheService _cache = cache;
+        private readonly ILogger<DeveloperService> _logger = logger;
         private readonly UserManager<ApplicationUser> _employeeManager = employeeManager;
     
         
@@ -28,26 +30,24 @@ namespace CRMApi.Services.Services
             var response = new ServiceResponse<string>();
              
             var developer = await _employeeManager.FindByIdAsync(id);
-            if (developer == null)
+
+            if(developer is null)
             {
-                response.Message = $"Developer not found";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("Developer not found.");
             }
+       
+                await _employeeManager.DeleteAsync(developer);
+
+                response.Message = "Developer deleted Successfully";
 
             try
             {
-                await _employeeManager.DeleteAsync(developer);
-
                 await _cache.RemoveAsync($"developer:{id}");
-
-                response.Message = "Developer deleted Successfully";
             }
-
-            catch (DbUpdateException dbEx)
+            catch (Exception ex)
             {
-                response.Message = $"An error occured while deleting developer: {dbEx.Message}";
-                response.Success = false;
+                _logger.LogError(ex, 
+                "Failed to remove developer from cache. {CacheKey}" , $"developer:{id}");
             }
 
             return response;
@@ -75,9 +75,7 @@ namespace CRMApi.Services.Services
 
             if (!developers.Any())  
             {
-                response.Message = "No records found";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("No developers found.");
             }
 
             response.Data   = developers.Select(d => d.ToGetDto()).ToList();
@@ -86,7 +84,14 @@ namespace CRMApi.Services.Services
                                 $"Current Page: {page}" +
                                 $" PageSize: {pageSize}" ;
 
-            await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));   
+            try
+            {
+                await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to cache developers data. {CacheKey}", cacheKey);
+            }
 
             return response;
         }
@@ -110,15 +115,22 @@ namespace CRMApi.Services.Services
 
             if (developer is null)
             {
-                response.Message = $"Developer not found!";
-                response.Success = false;
-                return response;
+               throw new NotFoundException("Developer not found.");
             }
 
            response.Data = developer.ToGetDto();
 
             response.Message = "Developer retrieved Successfully";
-            await _cache.SetAsync(cacheKey , response.Data, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));
+
+            try
+            {
+                await _cache.SetAsync(cacheKey , response.Data, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(10));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to cache developer data. {CacheKey}", cacheKey);
+            }
+
             return response;
 
         }
@@ -131,28 +143,24 @@ namespace CRMApi.Services.Services
 
             if (developer is null)
             {
-                response.Message = $"Developer not found!";
-                response.Success = false;
-                return response;
+               throw new NotFoundException("Developer not found.");
             }
 
             var developerDTO = developer.ToPatchDto();
 
             patchData.ApplyTo(developerDTO);
-
+            
+            _context.Developers.Update(developer);
+            await _context.SaveChangesAsync();
+            response.Message = "Developer updated successfully";
+                 
             try
             {
-                _context.Developers.Update(developer);
-                await _context.SaveChangesAsync();
-
                 await _cache.RemoveAsync($"developer:{id}");
-
-                response.Message = "Developer updated successfully";
             }
-            catch (DbUpdateException dbEx)
+            catch (Exception ex)
             {
-                response.Message = $"A database error occurred while updating developer: {dbEx.Message}";
-                response.Success = false;
+                _logger.LogError(ex, "Failed to remove developer from cache. {CacheKey}", $"developer:{id}");
             }
 
             return response;
@@ -166,24 +174,21 @@ namespace CRMApi.Services.Services
 
             if (developer is null)
             {
-                response.Message = $"Developer not found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("Developer not found.");
             }
 
             developer.Update(developerDTO);
+            await _context.SaveChangesAsync();
+            response.Message = "Developer updated successfully";
 
             try
             {
-                await _context.SaveChangesAsync();
                 await _cache.RemoveAsync($"developer:{id}");
-                response.Message = "Developer updated successfully";
             }
 
-            catch (DbUpdateException dbEx)
+            catch (Exception ex)
             {
-                response.Message = $"Database error: {dbEx.Message}";
-                response.Success = false;
+                _logger.LogError(ex, "Failed to remove developer from cache. {CacheKey}", $"developer:{id}");
             }
 
             return response;

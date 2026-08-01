@@ -2,6 +2,7 @@
 using CRMApi.DbContexts;
 using CRMApi.Domain.DTOs;
 using CRMApi.Domain.Models;
+using CRMApi.Exceptions.Types;
 using CRMApi.Extentions;
 using CRMApi.Mappings;
 using CRMApi.Repository;
@@ -13,11 +14,13 @@ using Microsoft.EntityFrameworkCore;
 namespace CRMApi.Services.Services 
 {
     public class ProjectService(IBaseRepository<Project> repo,
-    AppDbContext context,  IDistributedRedisCacheService cache) : IProjectService
+    AppDbContext context,  IDistributedRedisCacheService cache,
+    ILogger<ProjectService> logger) : IProjectService
     {
         private readonly IBaseRepository<Project> _repo = repo;
         private readonly AppDbContext _context = context;
         private readonly IDistributedRedisCacheService _cache = cache;
+        private readonly ILogger<ProjectService> _logger = logger;
 
         public async Task<ServiceResponse<GetProjectDto>> CreateProject(ProjectDTO projectDTO)
         {
@@ -25,30 +28,28 @@ namespace CRMApi.Services.Services
 
             if (projectDTO is null) 
             {
-                response.Message = "Project DTO is null!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("Project data is null!");
             }
 
             var project = projectDTO.ToEntity();
 
+            await _repo.AddAsync(project);
+              
+            response.Data = project.ToGetDto();
+
+            response.Message = "Project Created successfully";
+
             try
             {
-                await _repo.AddAsync(project);
-              
-                response.Data = project.ToGetDto();
-
-                response.Message = "Project Created successfully";
-
                await _cache.SetAsync($"project:{project.Id}", projectDTO,
                TimeSpan.FromMinutes(5),TimeSpan.FromMinutes(10));
             }
 
-            catch (DbUpdateException dbEx)
+            catch (Exception ex)
             {
-                response.Message = $"Database error: {dbEx.Message}";
-                response.Success = false;
-            }                                                   
+                _logger.LogError(ex, "Failed to cache project data. {CacheKey}", $"project:{project.Id}");
+            }   
+                                                   
             return response;               
         }
 
@@ -60,23 +61,20 @@ namespace CRMApi.Services.Services
 
             if (project is null) 
             {
-                response.Message = $"Project not found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("Project not found!");
             }
+
+            await _repo.DeleteAsync(project);
+            response.Message = "Project deleted Successfully";
 
             try
             {
-                await _repo.DeleteAsync(project);
-
                 await _cache.RemoveAsync($"project:{id}");
-                response.Message = "Project deleted Successfully";
             }
 
-            catch( DbUpdateException dbEx)
+            catch( Exception ex)
             {
-                response.Message = $"A database error occured while deleting project: {dbEx.Message}";
-                response.Success = false;
+                _logger.LogError(ex, "Failed to remove project from cache. {CacheKey}", $"project:{id}");
             }
 
             return response;
@@ -92,26 +90,15 @@ namespace CRMApi.Services.Services
 
             if (project is null)
             {
-                response.Message = $"Project not found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("Project not found!");
             }
 
             if (project.Team is not null)
             {
                 project.TeamId = null;
 
-                try
-                {
-                    await _context.SaveChangesAsync();
-                    response.Message = "Team deleted successfully";
-                }
-
-                catch ( DbUpdateException dbEx)
-                {
-                    response.Message = $"Database error: {dbEx.Message}";
-                    response.Success = false;
-                }
+                await _context.SaveChangesAsync();
+                response.Message = "Team deleted successfully";
             }
             
             return response;
@@ -137,9 +124,7 @@ namespace CRMApi.Services.Services
 
             if (!projects.Any())
             {
-                response.Message = "No records found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("No projects found.");
             }
 
             response.Data = projects.Select(p => p.ToGetDto()).ToList();
@@ -147,10 +132,19 @@ namespace CRMApi.Services.Services
             response.Message = "Projects retrieved successfully" +
                                $" Current Page: {page}" +
                                $" Page Size: {pageSize}";
-                              
-            await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
-            return response;
+
+            try
+            {
+                await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
             }
+
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to cache projects data. {CacheKey}", cacheKey);
+            }
+
+            return response;
+        }
 
         public async Task<ServiceResponse<GetProjectDto>> GetProjectById(int id)
         {
@@ -170,16 +164,23 @@ namespace CRMApi.Services.Services
 
             if (project is null)
             {
-                response.Message = $"Project not found!";
-                response.Success = false;
-                return response; 
+                throw new NotFoundException("Project not found!");
             }
 
             response.Data = project.ToGetDto();
             
             response.Message = "Project retrieved Successfully";
-            
-            await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
+
+            try
+            {
+                await _cache.SetAsync(cacheKey, response.Data, TimeSpan.FromMinutes(5));
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to cache project data. {CacheKey}", cacheKey);
+            }
+
             return response;
         }
 
@@ -198,28 +199,24 @@ namespace CRMApi.Services.Services
 
             if (project  is null)
             {
-                response.Message = $"Project not found";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("Project not found!");
             }
 
             var dto = project.ToPatchDto();
 
             patchData.ApplyTo(dto);
 
+            await _repo.UpdateAsync(project);
+            response.Message = "Project updated successfully!";
+
             try
             {
-               await _repo.UpdateAsync(project);
-             
                await _cache.RemoveAsync($"project:{id}");
-
-               response.Message = "Project updated successfully!";
             }
 
-            catch(DbUpdateException dbEx)
+            catch(Exception ex)
             {
-                response.Message = $"A database error occured while updating project: {dbEx.Message}";
-                response.Success = false;
+                _logger.LogError(ex, "Failed to remove project from cache. {CacheKey}", $"project:{id}");
             }
 
             return response;
@@ -240,26 +237,22 @@ namespace CRMApi.Services.Services
 
             if (project is null)
             {
-                response.Message = $"Project not found!";
-                response.Success = false;
-                return response;
+                throw new NotFoundException("Project not found!");
             }
 
             project.Update(projectDTO);
+            response.Message = "Project Updated Successfully";
 
             try
             {
                 await _cache.RemoveAsync($"project:{id}");
-
-                response.Message = "Developer Updated Successfully";
             }
 
-            catch (DbUpdateException dbEx)
+            catch (Exception ex)
             {
-                response.Message = $"Database error: {dbEx.Message}";
-                response.Success = false;
-            }
-
+                _logger.LogError(ex, "Failed to remove project from cache. {CacheKey}", $"project:{id}");
+            }   
+    
             return response;
         }
     }
