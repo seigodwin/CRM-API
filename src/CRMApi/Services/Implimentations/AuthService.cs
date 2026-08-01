@@ -548,7 +548,6 @@ namespace CRMApi.Services.Services
                 }
 
                 response.Message = "Password reset success";                
-            
 
             await _eMailService.ResetPasswordResponseEmailAsync(user.Email!, user.UserName!);
             return response;
