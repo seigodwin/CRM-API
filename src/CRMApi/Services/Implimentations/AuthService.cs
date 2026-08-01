@@ -311,7 +311,7 @@ namespace CRMApi.Services.Services
             {
                 throw new AuthenticationException("Invalid token or refresh token");
             }
-            
+
             response.Data = result;
             response.Message = "Token refreshed successfully";
             return response;
@@ -330,9 +330,7 @@ namespace CRMApi.Services.Services
             var userExists = await _userManager.FindByEmailAsync(adminDTO.Email);
             if(userExists is not null)
             {
-                response.Success = false;
-                response.Message = "The email provided has an account already";
-                return response;
+                throw new ConflictException("A user with the provided email already exists");
             }
 
             var admin = new Admin
@@ -410,28 +408,20 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            var userExists = await _userManager.FindByEmailAsync(userDTO.Email);
             
-            if(userExists is not null)
+            if(await _userManager.FindByEmailAsync(userDTO.Email) is not null)
             {
-                response.Success = false;
-                response.Message = "A user with the provided email already exists";
-                return response;
+                throw new ConflictException("A user with the provided email already exists");
             }
 
             var developer = userDTO.ToEntity();
            
-            try
-            {
-                var userCreated = await _userManager.CreateAsync(developer,userDTO.Password);
+              var userCreated = await _userManager.CreateAsync(developer,userDTO.Password);
                 await _context.SaveChangesAsync();
 
                 if(!userCreated.Succeeded)
                 {
-                    response.Success = false;
-                    response.Message = string.Join(Environment.NewLine,
-                    userCreated.Errors.Select(e => e.Description));
-                    return response;
+                    throw new ValidationsException(userCreated.Errors.Select(e => e.Description));
                 }
                 
                 response.Data = developer.ToGetDto();
@@ -476,21 +466,24 @@ namespace CRMApi.Services.Services
                             string.Join(", ", rolesResults.Errors.Select(e => e.Description));
                             return response;
                     }
+
                     response.Data.Roles = (await _userManager.GetRolesAsync(developer)).ToList() ?? new List<string>();
                     response.Message = "User created, roles assign successfully";
                 }
 
-            }
+            try
+            {
+                await _eMailService.WelcomeEmailAsync(developer.Email!, developer.UserName!);
+
+            }        
             catch(Exception ex)
             {
-                response.Success = false;
-                response.Message = $"Failed to register new user: {ex.Message}";
+                _logger.LogError(ex, "Failed to send welcome email to {Email}", developer.Email);
             }
 
-            await _eMailService.WelcomeEmailAsync(developer.Email!, developer.UserName!);
-            
             return response;
         }
+
         public async Task<ServiceResponse<string>> RemoveRoleAsync(string id)
         {
             var response = new ServiceResponse<string>();
@@ -500,6 +493,7 @@ namespace CRMApi.Services.Services
                 response.Message = "Invalid user id";
                 return response;
             }
+
             try
             {
                 var results = await _roleManager.DeleteAsync(new IdentityRole(id));
@@ -547,22 +541,14 @@ namespace CRMApi.Services.Services
                 return response;
             }
 
-            try
-            {
                 var changedPassword = await _userManager.ResetPasswordAsync(user,model.Token,model.NewPassword);
                 if (!changedPassword.Succeeded)
                 {
-                    response.Success = false;
-                    response.Message = $"Failed to reset password";
+                    throw new AuthenticationException(string.Join(", ", changedPassword.Errors.Select(e => e.Description)));
                 }
-                response.Message = "Password reset success";                
-            }
 
-            catch(Exception ex)
-            {
-                response.Success = false;
-                response.Message = $"Failed to reset password: {ex.Message}";
-            }
+                response.Message = "Password reset success";                
+            
 
             await _eMailService.ResetPasswordResponseEmailAsync(user.Email!, user.UserName!);
             return response;
