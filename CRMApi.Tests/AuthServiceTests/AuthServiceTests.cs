@@ -8,6 +8,7 @@ using CRMApi.Utility.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using SendGrid;
 using System;
@@ -25,6 +26,7 @@ namespace CRMApi.Tests.AuthServiceTests
         private readonly Mock<IEmailService> _emailServiceMock;
         private readonly AppDbContext _context;
         private readonly ApplicationUser _user;
+        private readonly Mock<ILogger<AuthService>> _loggerMock;
 
         //SUT
         private readonly AuthService _sut;
@@ -34,7 +36,7 @@ namespace CRMApi.Tests.AuthServiceTests
             _tokenServiceMock = new Mock<ITokenService>();
             _emailServiceMock = new Mock<IEmailService>();
             _context = CreateDbContext();
-          
+            _loggerMock = new Mock<ILogger<AuthService>>();
 
             _user = new ApplicationUser
             {
@@ -55,7 +57,8 @@ namespace CRMApi.Tests.AuthServiceTests
             );
 
             _sut = new AuthService(_context, _userManagerMock.Object, _roleManagerMock.Object,
-                _rateLimitServiceMock.Object, _tokenServiceMock.Object, _emailServiceMock.Object);
+                _rateLimitServiceMock.Object, _tokenServiceMock.Object, _emailServiceMock.Object
+                , _loggerMock.Object); 
         }
 
         [Fact]
